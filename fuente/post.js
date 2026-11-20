@@ -42,7 +42,7 @@ function renderSheet(){
     h+=`<h2 class="d-m pad" style="padding:4px 8px 0">Agregá una receta</h2><div class="col pad" style="padding:0 8px">${optRow("pencil-simple","Escribirla yo","addManual")}${optRow("file-csv","Desde un archivo CSV","addCsv")}</div>`;
   }else if(t==="menu"){
     const r=getR(sheet.id);
-    h+=`<h2 class="t-m" style="padding:4px 8px 0">${esc(r?r.name:"")}</h2><div class="col" style="padding:0 8px">${optRow("pencil-simple","Editar receta","edit")}${optRow("link","Compartir","share")}${optRow("trash","Borrar receta","askDelete",true)}</div>`;
+    h+=`<h2 class="t-m" style="padding:4px 8px 0">${esc(r?r.name:"")}</h2><div class="col" style="padding:0 8px">${isMine(r)?optRow("pencil-simple","Editar receta","edit"):""}${optRow("link","Compartir","share")}${isMine(r)?optRow("trash","Borrar receta","askDelete",true):""}</div>`;
   }else if(t==="photo"){
     h+=`<h2 class="t-m" style="padding:4px 8px 0">Foto</h2><div class="col" style="padding:0 8px">${optRow("camera","Cambiar foto","pickPhoto")}${optRow("trash","Quitar foto","rmPhoto",true)}</div>`;
   }else if(t==="delete"){
@@ -80,7 +80,7 @@ function fromDraft(d){
   delete r.ings;if(!r.photo)delete r.photo;delete r.drawing;
   return r;
 }
-function findDup(r){const n=norm(r.name);return S.recipes.find(x=>x.id!==r.id&&norm(x.name)===n);}
+function findDup(r){const n=norm(r.name);return S.recipes.find(x=>x.id!==r.id&&isMine(x)&&norm(x.name)===n);}
 
 /* ================= pieces ================= */
 const V={};
@@ -100,10 +100,9 @@ V.home=(p)=>{
   const prog=S.state.progress&&getR(S.state.progress.id)?S.state.progress:null;
   let h=`<div class="screen">`;
   h+=searching?`<div class="nav" style="padding-left:var(--gx)"><label class="search">${ic("magnifying-glass",20)}<input id="q" data-bind="q" class="bm" placeholder="Buscar una receta" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></label><button class="btn txt sm" data-act="endSearch">Cancelar</button></div>`
-    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">Mis recetas</h1>${S.recipes.length?ibtn("search","magnifying-glass","Buscar"):""}</div>`;
+    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">Mis recetas</h1><div class="row">${S.recipes.length?ibtn("search","magnifying-glass","Buscar"):""}<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button></div></div>`;
   h+=`<div class="body" style="gap:16px;padding-bottom:120px">`;
   if(S.slow)h+=`<div class="notice danger">${ic("warning-circle",18)}<span>No pudimos conectarnos todavía. Seguimos intentando.</span></div>`;
-  if(S.mode==="local")h+=`<p class="cap c2">Sin sesión iniciada: tus recetas quedan solo en este navegador.</p>`;
   if(prog&&!searching){const r=getR(prog.id);
     h+=`<button class="resume" data-act="resumeCook"><span class="tx"><b class="bm-m">${esc(r.name)}</b><span class="cap" style="color:var(--on-accent-2)">Ibas por el paso ${prog.step+1} de ${r.steps.length}</span></span><span class="ib dark">${ic("arrow-right",20)}</span></button>`;}
   if(!S.recipes.length){
@@ -111,7 +110,7 @@ V.home=(p)=>{
     return h;
   }
   if(!list.length)h+=`<div class="col g8" style="padding-top:40px;text-align:center"><h2 class="t-m">No encontramos nada</h2><p class="bm c2">Probá con otra palabra.</p></div>`;
-  else h+=`<div class="grid">${list.map(r=>`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${r.time?esc(fmtTime(r.time)):(r.steps||[]).length+" pasos"}</span></div>${r.fav&&r.photo?`<span class="fav">${ic("heart-fill",18)}</span>`:r.fav?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`).join("")}</div>`;
+  else h+=`<div class="grid">${list.map(r=>`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${r.time?esc(fmtTime(r.time)):(r.steps||[]).length+" pasos"}</span></div>${isFav(r)&&r.photo?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`).join("")}</div>`;
   h+=`</div></div>`;
   if(!searching)h+=`<button class="fab" data-act="openAdd" aria-label="Agregar receta">${ic("plus",26)}</button>`;
   return h;
@@ -122,9 +121,9 @@ V.detail=(p)=>{
   const r=getR(p.id);if(!r)return V.gone();
   const base=r.servings||1,sv=p.sv||base,f=sv/base;
   let h=`<div class="cbar" id="cbar">${nav(ibtn("back","caret-left","Volver"),`<span class="bm-m cbt">${esc(r.name)}</span>`,"")}</div><div class="screen" style="padding-top:0"><div class="hero" id="hero">${r.photo?`<div class="ph">${pic(r)}</div>`:`<div class="art">${pic(r)}</div>`}
-  ${nav(ibtn("back","caret-left","Volver",r.photo?"":"dark"),"",`<div class="row">${ibtn("fav",r.fav?"heart-fill":"heart","Favorita",r.photo?"":"dark")}${ibtn("menu","dots-three","Más",r.photo?"":"dark")}</div>`)}</div>
+  ${nav(ibtn("back","caret-left","Volver",r.photo?"":"dark"),"",`<div class="row">${ibtn("fav",isFav(r)?"heart-fill":"heart","Favorita",r.photo?"":"dark")}${ibtn("menu","dots-three","Más",r.photo?"":"dark")}</div>`)}</div>
   <div class="sheetc">
-    <div class="titleRow"><h1 class="d-m">${esc(r.name)}</h1>${r.time?`<div class="tm"><span class="d-m ca">${esc(fmtTime(r.time))}</span><span class="lbl c2">Tiempo</span></div>`:""}</div>`;
+    <div class="titleRow"><div class="col g8"><h1 class="d-m">${esc(r.name)}</h1>${!isMine(r)&&r.ownerName?`<span class="lbl c2">De ${esc(r.ownerName)}</span>`:""}</div>${r.time?`<div class="tm"><span class="d-m ca">${esc(fmtTime(r.time))}</span><span class="lbl c2">Tiempo</span></div>`:""}</div>`;
   if(r.ingredients.length){
     h+=`<div class="col g8"><div class="between"><h2 class="hl">Ingredientes</h2>${stepper("sv",sv)}</div><div class="rows">${r.ingredients.map(i=>{const x=ingText(i,f);return`<div class="r"><span class="bm">${esc(x.name)}</span>${x.q?`<span class="bm-m ca">${esc(x.q)}</span>`:""}</div>`}).join("")}</div>${sv!==base?`<p class="cap ca">Cantidades para ${sv} porciones</p>`:""}</div>`;
   }
@@ -255,6 +254,37 @@ V.done=()=>{
   </div><div class="foot"><button class="btn pri wide" data-act="doneBack">Volver a la receta</button></div></div>`;
 };
 
+/* ----- cuenta ----- */
+const initial=()=>(myName()||(S.user&&S.user.email)||"?").trim().charAt(0).toUpperCase();
+const okEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim());
+V.welcome=()=>`<div class="screen"><div class="center" style="gap:40px"><div style="width:240px;height:180px">${ill("pasta")}</div><h1 class="d-m">Recetario</h1></div>
+  <div class="foot"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button></div></div>`;
+V.email=(p)=>{
+  const v=p.email!=null?p.email:(lsGet(LS_EMAIL)||"");
+  return`<div class="screen">${nav(p.confirm?"":ibtn("back","caret-left","Volver"))}<div class="body">
+  <div class="col g8"><h1 class="d-m">${p.confirm?"Confirmá tu email":"¿Cuál es tu email?"}</h1><p class="bm c2">${p.confirm?"Abriste el link en otro navegador. Escribí el mismo email para entrar.":"Te mandamos un link para entrar. No hace falta contraseña."}</p></div>
+  <div class="field"><label class="lbl c2" for="f-email">Email</label><input class="input" id="f-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" data-bind="email" value="${esc(v)}" placeholder="vos@email.com" autofocus></div>
+  </div><div class="foot"><button class="btn pri wide" data-act="${p.confirm?"confirmEmail":"sendLink"}" ${p.busy?"disabled":""}>${p.confirm?"Entrar":"Mandame el link"}</button>${p.confirm?`<button class="btn txt wide" data-act="cancelLink">Usar otra cuenta</button>`:""}</div></div>`;
+};
+V.sent=(p)=>`<div class="screen">${nav(ibtn("back","caret-left","Volver"))}<div class="center" style="gap:24px"><div class="bigcircle" style="width:136px;height:136px;background:var(--accent);color:#fff">${ic("check",56)}</div>
+  <div class="col g8"><h1 class="d-m">Revisá tu mail</h1><p class="bm c2">Te mandamos un link a ${esc(p.email)}. Abrilo desde este teléfono.</p></div></div>
+  <div class="foot"><button class="btn txt wide" data-act="resend">Mandarlo de nuevo</button></div></div>`;
+V.name=(p)=>{
+  const v=p.nm!=null?p.nm:(myName()||"");
+  return`<div class="screen">${nav()}<div class="body">
+  <div class="col g8"><h1 class="d-m">¿Cómo te llamás?</h1><p class="bm c2">Así aparece en las recetas que subís.</p></div>
+  <div class="field"><label class="lbl c2" for="f-nm">Nombre</label><input class="input" id="f-nm" data-bind="nm" value="${esc(v)}" placeholder="Tu nombre" autocomplete="given-name" autofocus></div>
+  </div><div class="foot"><button class="btn pri wide" data-act="saveName">Empezar</button></div></div>`;
+};
+V.profile=(p)=>{
+  const v=p.pname!=null?p.pname:myName();
+  return`<div class="screen">${nav(ibtn("back","caret-left","Volver"),`<span class="lbl c2">Perfil</span>`,"")}<div class="body">
+  <div class="col g16"><div class="avatar big"><span>${esc(initial())}</span></div><div class="col g4"><h1 class="d-m">${esc(myName()||"Sin nombre")}</h1><p class="bm c2">${esc(S.user&&S.user.email||"")}</p></div></div>
+  <div class="field"><label class="lbl c2" for="f-pname">Nombre</label><input class="input" id="f-pname" data-bind="pname" value="${esc(v)}" placeholder="Tu nombre" autocomplete="given-name" enterkeyhint="done"></div>
+  </div><div class="foot"><button class="btn sec wide" data-act="logout">Cerrar sesión</button></div></div>`;
+};
+V.offline=()=>`<div class="screen"><div class="center"><h2 class="t-m">No pudimos cargar la app</h2><p class="bm c2">Revisá tu conexión y volvé a abrirla.</p><button class="btn pri" data-act="reload">Reintentar</button></div></div>`;
+
 /* ================= render ================= */
 const app=document.getElementById("app");
 let lastKey="";
@@ -275,6 +305,7 @@ function onScrollBar(){const b=document.getElementById("cbar"),h=document.getEle
 window.addEventListener("scroll",onScrollBar,{passive:true});
 function grow(el){el.style.height="auto";el.style.height=el.scrollHeight+"px";}
 function render(){
+  if(S.fail){app.innerHTML=V.offline();return;}
   if(!S.ready){app.innerHTML=V.loading();return;}
   const c=cur();
   if(c.n==="home"&&c.searching&&document.activeElement&&document.activeElement.id==="q"){updateHomeList();return;}
@@ -298,9 +329,9 @@ A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=d
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
 A.open=(el)=>{closeSheet();go("detail",{id:el.dataset.id});};
 A.sv=(el)=>{const c=cur();const r=getR(c.id);c.sv=Math.max(1,Math.min(99,(c.sv||r.servings)+ +el.dataset.d));keepScroll(()=>{});};
-A.fav=async()=>{const r=clone(getR(cur().id));r.fav=!r.fav;await putRecipe(r);toast(r.fav?"Guardada en favoritas":"Sacada de favoritas");};
+A.fav=async()=>{const on=await toggleFav(cur().id);toast(on?"Guardada en favoritas":"Sacada de favoritas");};
 A.menu=()=>openSheet({t:"menu",id:cur().id});
-A.edit=()=>{closeSheet();draft=toDraft(getR(cur().id));go("edit");};
+A.edit=()=>{closeSheet();if(!isMine(getR(cur().id)))return;draft=toDraft(getR(cur().id));go("edit");};
 A.saveEdit=async()=>{if(!draft.name.trim()){const i=document.getElementById("f-name");i&&i.focus();return;}const r=fromDraft(draft);if(await putRecipe(r)){draft=null;back();toast("Cambios guardados");}};
 A.share=async()=>{
   closeSheet();const r=getR(cur().id);
@@ -315,6 +346,52 @@ A.doDelete=async()=>{
   reset();await delRecipe(r.id);
   toast("Receta borrada","Deshacer",()=>putRecipe(r));
 };
+
+/* cuenta */
+A.reload=()=>location.reload();
+A.toEmail=()=>go("email");
+A.google=async()=>{
+  const p=new F.au.GoogleAuthProvider();
+  try{await F.au.signInWithPopup(F.auth,p);}
+  catch(e){if(/popup-blocked|operation-not-supported|web-storage/.test(e&&e.code||"")){try{await F.au.signInWithRedirect(F.auth,p)}catch(e2){authErr(e2)}}else authErr(e);}
+};
+async function sendLink(email){
+  await F.au.sendSignInLinkToEmail(F.auth,email,{url:location.origin+location.pathname,handleCodeInApp:true});
+  lsSet(LS_EMAIL,email);
+}
+A.sendLink=async()=>{
+  const c=cur(),i=document.getElementById("f-email"),email=(i?i.value:c.email||"").trim();
+  if(!okEmail(email)){i&&i.classList.add("err");i&&i.focus();toast("Escribí un email válido");return;}
+  c.email=email;c.busy=true;render();
+  try{await sendLink(email);c.busy=false;go("sent",{email});}catch(e){c.busy=false;render();authErr(e);}
+};
+A.resend=async()=>{try{await sendLink(cur().email);toast("Te lo mandamos de nuevo");}catch(e){authErr(e);}};
+A.confirmEmail=async()=>{
+  const c=cur(),i=document.getElementById("f-email"),email=(i?i.value:"").trim();
+  if(!okEmail(email)){i&&i.classList.add("err");i&&i.focus();return;}
+  c.email=email;c.busy=true;render();
+  if(!await finishEmailLink(email)){stack=[{n:"welcome"}];render();}
+};
+A.cancelLink=()=>{S.linkPending=null;history.replaceState(null,"",location.pathname);stack=[{n:"welcome"}];render();};
+async function renameEverywhere(name){
+  S.profile=Object.assign({},S.profile,{name});
+  await saveUser({name});
+  const mine=S.recipes.filter(r=>isMine(r)&&r.ownerName!==name);
+  if(!mine.length)return;
+  try{const b=F.fs.writeBatch(F.db);mine.slice(0,450).forEach(r=>b.update(recRef(r.id),{ownerName:name}));await b.commit();}catch(e){}
+}
+A.saveName=async()=>{
+  const i=document.getElementById("f-nm"),name=(i?i.value:"").trim();
+  if(!name){i&&i.classList.add("err");i&&i.focus();toast("Escribí tu nombre");return;}
+  await renameEverywhere(name);reset();
+};
+A.profile=()=>go("profile");
+async function savePname(){
+  const c=cur();if(c.n!=="profile"||c.pname==null)return;
+  const name=c.pname.trim();if(!name||name===myName())return;
+  await renameEverywhere(name);toast("Nombre guardado");render();
+}
+A.logout=async()=>{closeSheet();cook=null;lockOff();try{await F.au.signOut(F.auth)}catch(e){toast("No pudimos cerrar la sesión");}};
 
 /* drafts */
 A.addManual=()=>{closeSheet();draft=blank();go("manual",{s:1});};
@@ -408,7 +485,7 @@ A.csvRows=()=>{
       else if(m==="category"){const c=CATS.find(x=>norm(x)===norm(v));r.category=c||"";}
       else if(m==="ingredients")r.ingredients=splitCell(v);else if(m==="steps")r.steps=splitCell(v);});
     return r;}).filter(r=>r.name);
-  const names=new Set(S.recipes.map(x=>norm(x.name)));
+  const names=new Set(S.recipes.filter(isMine).map(x=>norm(x.name)));
   csv.items=items.map(r=>{const dup=names.has(norm(r.name));return{r,dup,on:!dup};});
   if(!csv.items.length){toast("No encontramos filas con nombre");return;}
   go("csvpick");
@@ -422,8 +499,8 @@ A.csvImport=async()=>{
 };
 A.template=async()=>{
   const t='nombre,tiempo,porciones,categoria,ingredientes,pasos\n"Tarta de zapallitos",50 min,4,Rápidas,"1 tapa de tarta|3 zapallitos|1 cebolla|3 huevos|100 g de queso rallado","Rallá los zapallitos y salteálos con la cebolla 10 minutos.|Mezclá con los huevos y el queso.|Rellená la tapa y horneá 30 minutos."\n';
-  try{const dl=window.claude?await window.claude.use("downloads"):null;if(dl){await dl.save({filename:"plantilla-recetas.csv",data:t});return;}}catch(e){if(e&&e.code==="declined")return;}
-  try{await navigator.clipboard.writeText(t);toast("Copiamos la plantilla");}catch(e){toast("No pudimos descargar la plantilla");}
+  try{const u=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv"}));const a=document.createElement("a");a.href=u;a.download="plantilla-recetas.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);}
+  catch(e){try{await navigator.clipboard.writeText(t);toast("Copiamos la plantilla");}catch(_){toast("No pudimos descargar la plantilla");}}
 };
 
 /* cooking */
@@ -478,6 +555,7 @@ document.addEventListener("input",e=>{
   const c=cur();
   if(b==="q"){c.q=el.value;updateHomeList();return;}
   if(b.startsWith("map."))return;
+  if(b==="email"||b==="nm"||b==="pname"){c[b]=el.value;el.classList.remove("err");return;}
   if(!draft)return;
   if(el.tagName==="TEXTAREA")grow(el);
   const[k,i]=b.split(".");
@@ -486,12 +564,15 @@ document.addEventListener("input",e=>{
   else if(k==="st")draft.steps[+i]=el.value;
   else draft[k]=el.value;
 });
+document.addEventListener("focusout",e=>{if(e.target&&e.target.id==="f-pname")savePname();});
 document.addEventListener("change",e=>{const el=e.target;const b=el.dataset&&el.dataset.bind;if(b&&b.startsWith("map.")){csv.map[+b.slice(4)]=el.value;keepScroll(()=>{});}});
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;
   const b=e.target.dataset&&e.target.dataset.bind||"";
-  if(e.target.id==="q"){e.target.blur();return;}
-  if(b.startsWith("in.")||b.startsWith("iq.")){e.preventDefault();const i=+b.split(".")[1];if(i===draft.ings.length-1)A.addIng();else{const n=app.querySelector(`[data-bind="iq.${i+1}"]`);n&&n.focus();}}
+  if(e.target.id==="q"||e.target.id==="f-pname"){e.target.blur();return;}
+  if(e.target.id==="f-email"){e.preventDefault();(cur().confirm?A.confirmEmail:A.sendLink)();return;}
+  if(e.target.id==="f-nm"){e.preventDefault();A.saveName();return;}
+  if(draft&&(b.startsWith("in.")||b.startsWith("iq."))){e.preventDefault();const i=+b.split(".")[1];if(i===draft.ings.length-1)A.addIng();else{const n=app.querySelector(`[data-bind="iq.${i+1}"]`);n&&n.focus();}}
 });
 
 render();

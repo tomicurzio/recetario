@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Una receta válida: nombre, listas de ingredientes y pasos, foto chica.
+    function validRecipe() {
+      let d = request.resource.data;
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.ingredients is list && d.ingredients.size() <= 200
+        && d.steps is list && d.steps.size() <= 200
+        && (!('photo' in d) || (d.photo is string && d.photo.size() < 350000));
+    }
+
+    // Recetas: las ve cualquiera con sesión iniciada; solo quien la subió la cambia o la borra.
+    match /recipes/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && validRecipe();
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
+        && validRecipe();
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Perfil, favoritas y progreso: solo la propia persona.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}

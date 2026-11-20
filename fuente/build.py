@@ -11,5 +11,5 @@ print('missing',missing)
 icons={k:d[k] for k in need if k in d}
 draws=json.load(open('draws.json'))
 src=src.replace('/*ICONS*/',json.dumps(icons)).replace('/*DRAWINGS*/',json.dumps(draws))
-open('index.html','w').write(src)
+open('../public/index.html','w').write(src)
 print(len(src))

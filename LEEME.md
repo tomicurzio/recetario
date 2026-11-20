@@ -4,10 +4,15 @@ App web solo para celular (en compu se bloquea) para guardar recetas propias y c
 
 ## Archivos
 
-- `index.html`: la app armada, un solo archivo. Es lo que está publicado.
+- `public/index.html`: la app armada, un solo archivo. Es lo que se publica en Firebase Hosting.
+- `firebase.json`, `.firebaserc`, `firestore.rules`: configuración de Firebase (hosting y reglas de seguridad).
 - `fuente/`: el código separado en partes. `index.html` se arma con:
   ```
-  cat head.html pre.js mid.js post.js > src.html && python3 build.py
+  cd fuente && cat head.html pre.js mid.js post.js > src.html && python3 build.py && rm src.html
+  ```
+  Para publicar (desde la raíz del repo):
+  ```
+  firebase deploy --only hosting,firestore:rules
   ```
   - `head.html`: estilos (tokens de color, tipografía, botones, vidrio) y el esqueleto HTML.
   - `pre.js`: íconos, ilustraciones y funciones chicas.
@@ -19,7 +24,9 @@ App web solo para celular (en compu se bloquea) para guardar recetas propias y c
 ## Cómo funciona hoy
 
 - JavaScript sin frameworks.
-- Guarda los datos con la base de datos de los artifacts de claude.ai, separada por usuario: `data/users/<id>/profile/recipes/<id>` y `data/users/<id>/state`. Si no la tiene disponible, usa localStorage.
+- Cuentas con Firebase Authentication: Google o link por mail, sin contraseña.
+- Datos en Firestore: `recipes/<id>` (públicas para quien tenga sesión; solo quien la subió la edita o la borra, campo `ownerId`) y `users/<uid>` (nombre, favoritas y progreso en modo cocina, privado).
+- Las fotos se guardan dentro de la receta (no se usa Firebase Storage, que pide plan pago).
 - Mantiene la pantalla prendida mientras cocinás.
 - Cuando termina un timer, suena un aviso y el teléfono vibra.
 - Se pueden importar recetas desde un archivo CSV.

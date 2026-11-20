@@ -79,6 +79,7 @@ h1,h2,h3,p{margin:0}
 .btn.pri[disabled]{opacity:.42;box-shadow:none;pointer-events:none}
 .btn.txt{color:var(--ink2);height:48px}
 .btn.txt[disabled]{color:var(--ph);pointer-events:none}
+.btn.sec{background:var(--card);color:var(--ink);box-shadow:var(--sh),inset 0 0 0 1px var(--line)}
 .btn.danger{background:var(--danger);color:#fff;box-shadow:0 8px 20px rgba(217,68,46,.28)}
 .btn.sm{height:40px;padding:0 18px;font-size:16px;letter-spacing:-.01em}
 .btn.wide{width:100%}
@@ -153,6 +154,8 @@ textarea.bare{resize:none;display:block}
 .search{display:flex;align-items:center;gap:10px;height:48px;border-radius:999px;padding:0 6px 0 16px;background:var(--glass);box-shadow:var(--sh),inset 0 1px 0 var(--glass-edge);flex:1;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .search input{flex:1;border:0;background:none;outline:none;min-width:0}
 
+.ib.avatar{background:var(--accent-soft);color:var(--accent-ink);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.avatar.big{width:88px;height:88px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;letter-spacing:-.02em}
 /* ---------- detail ---------- */
 .hero{height:max(340px,calc(328px + env(safe-area-inset-top)));background:var(--accent);position:relative;display:flex;align-items:flex-end;justify-content:center;margin-top:calc(-1 * max(12px,env(safe-area-inset-top)));padding-top:max(12px,env(safe-area-inset-top));overflow:hidden}
 .hero .art{width:240px;height:180px;margin-bottom:56px}
