@@ -93,26 +93,42 @@ const arrowR="";
 V.loading=()=>`<div class="screen"><div class="center"><div class="spin"></div></div></div>`;
 
 /* ----- home ----- */
+const firstName=n=>String(n||"").trim().split(/\s+/)[0]||"";
+const cardHtml=(r,other)=>{const t=r.time?fmtTime(r.time):(r.steps||[]).length+" pasos";const sub=other&&r.ownerName?firstName(r.ownerName)+" · "+t:t;
+  return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)&&r.photo?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`;};
+const addCard=`<button class="rc addc" data-act="openAdd"><img src="img/mas.png" width="60" height="60" alt="" draggable="false"><span class="bm-m">Subí tu primera receta</span></button>`;
+const fakeCard=(n,t,k,cls)=>`<div class="rc ${cls}" aria-hidden="true"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`;
+const deck=`<div class="deck" aria-hidden="true">${fakeCard("Tarta de limón","45 min","tarta","dk l")}${fakeCard("Sopa de tomate","30 min","sopa","dk r")}<div class="dfront"><div class="tile"><span class="dic">${ic("pencil-simple",24)}</span></div><div class="tx"><span class="bm-m">Tu primera receta</span><span class="cap" style="color:var(--ph)">¿Cuánto tarda?</span></div></div></div>`;
 V.home=(p)=>{
   const q=p.q||"",searching=p.searching;
-  let list=S.recipes.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const byNew=(a,b)=>(b.createdAt||0)-(a.createdAt||0);
+  const own=S.recipes.filter(isMine);
+  const mine=S.recipes.filter(r=>isMine(r)||isFav(r)).sort(byNew);
+  const others=S.recipes.filter(r=>!isMine(r)).sort(byNew);
+  const tab=p.tab||(mine.length?"mis":"explorar");p.tab=tab;
+  let list=tab==="mis"?mine:others;
   if(q){const nq=norm(q);list=list.filter(r=>norm(r.name).includes(nq)||(r.ingredients||[]).some(i=>norm(i).includes(nq)));}
   const prog=S.state.progress&&getR(S.state.progress.id)?S.state.progress:null;
+  const title=tab==="mis"?"Mis recetas":"Explorar";
+  const base=tab==="mis"?mine:others;
   let h=`<div class="screen">`;
-  h+=searching?`<div class="nav" style="padding-left:var(--gx)"><label class="search">${ic("magnifying-glass",20)}<input id="q" data-bind="q" class="bm" placeholder="Buscar una receta" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></label><button class="btn txt sm" data-act="endSearch">Cancelar</button></div>`
-    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">Mis recetas</h1><div class="row">${S.recipes.length?ibtn("search","magnifying-glass","Buscar"):""}<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button></div></div>`;
+  h+=searching?`<div class="nav" style="padding-left:var(--gx)"><label class="search">${ic("magnifying-glass",20)}<input id="q" data-bind="q" class="bm" placeholder="Buscar en ${title.toLowerCase()}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></label><button class="btn txt sm" data-act="endSearch">Cancelar</button></div>`
+    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">${title}</h1><div class="row">${base.length?ibtn("search","magnifying-glass","Buscar"):""}<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button></div></div>`;
   h+=`<div class="body" style="gap:16px;padding-bottom:120px">`;
   if(S.slow)h+=`<div class="notice danger">${ic("warning-circle",18)}<span>No pudimos conectarnos todavía. Seguimos intentando.</span></div>`;
-  if(prog&&!searching){const r=getR(prog.id);
+  if(tab==="mis"&&prog&&!searching){const r=getR(prog.id);
     h+=`<button class="resume" data-act="resumeCook"><span class="tx"><b class="bm-m">${esc(r.name)}</b><span class="cap" style="color:var(--on-accent-2)">Ibas por el paso ${prog.step+1} de ${r.steps.length}</span></span><span class="ib dark">${ic("arrow-right",20)}</span></button>`;}
-  if(!S.recipes.length){
-    h+=`</div><div class="center" style="margin-top:-120px;gap:24px"><div class="tile" style="width:220px;height:180px;border-radius:999px;background:var(--tile)"><div style="width:180px;height:135px">${ill("sopa")}</div></div><div class="col g8"><h2 class="t-m">Todavía no tenés recetas</h2><p class="bm c2">Escribí la primera o importalas desde un archivo CSV.</p></div><button class="btn pri" data-act="openAdd">Agregar receta</button></div></div>`;
-    return h;
+  if(tab==="mis"&&!mine.length){
+    h+=`<div class="col" style="align-items:center;padding-top:4px">${deck}<div class="col g8" style="text-align:center;align-items:center"><h2 class="t-m">Empezá tu recetario</h2><p class="bm c2" style="max-width:280px">Guardá las recetas de tu casa y cocinalas paso a paso.</p></div></div>
+    <div class="col g4" style="padding-top:4px"><button class="btn pri wide" data-act="addManual">Escribir una receta</button><button class="btn txt wide" data-act="addCsv">Importar desde un CSV</button></div>`;
+  }else if(q&&!list.length)h+=`<div class="col g8" style="padding-top:40px;text-align:center"><h2 class="t-m">No encontramos nada</h2><p class="bm c2">Probá con otra palabra.</p></div>`;
+  else{
+    const showAdd=tab==="explorar"&&!own.length&&!q;
+    h+=`<div class="grid">${showAdd?addCard:""}${list.map(r=>cardHtml(r,tab==="explorar")).join("")}</div>`;
+    if(tab==="explorar"&&!others.length&&!q)h+=`<p class="bm c2" style="text-align:center;padding-top:8px">Todavía nadie más subió recetas.</p>`;
   }
-  if(!list.length)h+=`<div class="col g8" style="padding-top:40px;text-align:center"><h2 class="t-m">No encontramos nada</h2><p class="bm c2">Probá con otra palabra.</p></div>`;
-  else h+=`<div class="grid">${list.map(r=>`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${r.time?esc(fmtTime(r.time)):(r.steps||[]).length+" pasos"}</span></div>${isFav(r)&&r.photo?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`).join("")}</div>`;
   h+=`</div></div>`;
-  if(!searching)h+=`<button class="fab" data-act="openAdd" aria-label="Agregar receta">${ic("plus",26)}</button>`;
+  if(!searching)h+=`<nav class="tabbar" aria-label="Secciones"><button class="tb ${tab==="mis"?"on":""}" data-act="tab" data-t="mis" aria-label="Mis recetas">${ic("hamburger-fill",22)}<span class="lbl">Mis recetas</span></button><button class="tb ${tab==="explorar"?"on":""}" data-act="tab" data-t="explorar" aria-label="Explorar">${ic("compass-fill",22)}<span class="lbl">Explorar</span></button></nav><button class="fab" data-act="openAdd" aria-label="Agregar receta">${ic("plus",26)}</button>`;
   return h;
 };
 
@@ -334,6 +350,7 @@ A.back=back;A.home=()=>{closeSheet();reset();};
 A.toastAct=()=>{const f=toastAct;document.getElementById("toasts").innerHTML="";toastAct=null;f&&f();};
 A.closeSheet=closeSheet;
 A.openAdd=()=>openSheet({t:"add"});
+A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
 A.open=(el)=>{closeSheet();go("detail",{id:el.dataset.id});};
