@@ -234,7 +234,7 @@ let cook=null;
 let wake=null;
 async function lockOn(){try{if("wakeLock" in navigator&&!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null});}}catch(e){}}
 function lockOff(){try{wake&&wake.release()}catch(e){}wake=null;}
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cook){lockOn();if(cook.timer)onTick();}});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cook)lockOn();});
 
 V.prep=()=>{
   const r=getR(cook.id);if(!r)return V.gone();
@@ -247,37 +247,17 @@ V.prep=()=>{
 V.step=()=>{
   const r=getR(cook.id);if(!r)return V.gone();
   const i=cook.step,n=r.steps.length,t=r.steps[i];
-  const mins=stepMinutes(t),needs=needsList(r,t,cook.sv/(r.servings||1)),tm=cook.timer;
+  const mins=stepMinutes(t),needs=needsList(r,t,cook.sv/(r.servings||1));
   let h=`<div class="screen">${nav(ibtn("askExit","x","Salir"),`<span class="lbl c2">Paso ${i+1} de ${n}</span>`,ibtn("stepsSheet","list-bullets","Ver pasos"))}<div class="body">
   <div class="prog">${r.steps.map((_,k)=>`<i class="${k<=i?"on":""}"></i>`).join("")}</div>
   <div class="col g24"><div class="d-xl">${two(i+1)}</div><p class="t-m">${esc(t)}</p></div>`;
   if(needs.length)h+=`<div class="col g12"><span class="lbl c2">Necesitás</span><div class="chips">${needs.map(x=>`<span class="chip soft">${esc(x)}</span>`).join("")}</div></div>`;
   const ck=cook.clock&&cook.clock.stepIdx===i?cook.clock:null;
-  if(ck&&!(tm&&tm.stepIdx===i)){const d=new Date(ck.endAt),hm=d.getHours()+":"+two(d.getMinutes());
+  if(ck){const d=new Date(ck.endAt),hm=d.getHours()+":"+two(d.getMinutes());
     h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${Date.now()<ck.endAt?"Termina a las "+hm:"Terminó a las "+hm}</span><span class="cap c2">En el Reloj del iPhone. Pausalo o sumale tiempo desde ahí.</span></span>${mins?`<button class="btn sec sm" data-act="clockTimer" data-m="${mins}">De nuevo</button>`:""}</div>`;}
-  else if(tm&&tm.stepIdx===i)h+=`<button class="timerbox" data-act="showTimer"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m" id="tmini">${fmtClock(timerLeft())}</span><span class="cap c2">${tm.running?"Timer corriendo":"Timer en pausa"}</span></span><span class="cm" style="padding-right:8px">${ic("caret-right",18)}</span></button>`;
-  else if(mins)h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${mins} min</span><span class="cap c2">${IOS?"Se pone en el Reloj del iPhone":"Timer de este paso"}</span></span><button class="btn pri sm" data-act="${IOS?"clockTimer":"startTimer"}" data-m="${mins}">Iniciar</button></div>`;
+  else if(mins)h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${mins} min</span><span class="cap c2">${IOS?"Se pone en el Reloj del iPhone":"Poné un timer en tu teléfono"}</span></span>${IOS?`<button class="btn pri sm" data-act="clockTimer" data-m="${mins}">Iniciar</button>`:""}</div>`;
   h+=`</div><div class="foot row"><button class="btn txt" data-act="prevStep" ${i===0?"disabled":""}>Atrás</button>${i<n-1?`<button class="btn pri" data-act="nextStep">Siguiente paso${arrowR}</button>`:`<button class="btn pri" data-act="finish" style="min-width:150px">Terminar</button>`}</div></div>`;
   return h;
-};
-function timerLeft(){const t=cook&&cook.timer;if(!t)return 0;return t.running?Math.max(0,Math.round((t.endAt-Date.now())/1000)):t.left;}
-const fmtClock=s=>{s=Math.max(0,s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?h+":"+two(m)+":"+two(x):m+":"+two(x);};
-const fmtTotal=s=>{const m=Math.round(s/60);return m>=60?Math.floor(m/60)+":"+two(m%60)+" h":m+" min";};
-V.timer=()=>{
-  const t=cook.timer,r=getR(cook.id),left=timerLeft(),txt=fmtClock(left);
-  return`<div class="screen green">${nav(ibtn("hideTimer","caret-left","Volver","dark"))}<div class="body">
-  <div class="prog light">${r.steps.map((_,k)=>`<i class="${k<=t.stepIdx?"on":""}"></i>`).join("")}</div>
-  <h1 class="t-m">Paso ${t.stepIdx+1}</h1>
-  <div class="col g8"><div class="countrow" id="tbig"><span class="count" id="tnum">${txt}</span></div><div class="d-mr" style="color:var(--on-accent-2)">de ${fmtTotal(t.total)}</div></div>
-  <p class="bm" style="color:var(--on-accent-2)">${esc(r.steps[t.stepIdx])}</p>
-  <p class="cap" style="color:var(--on-accent-2);opacity:.75">Dejá esta pantalla abierta: va a sonar cuando termine, aunque el teléfono esté en silencio.</p>
-  </div><div class="foot row" style="gap:8px"><button class="btn lightglass" style="flex:1" data-act="toggleTimer">${t.running?"Pausa":"Seguir"}</button><button class="btn darkglass" style="flex:1" data-act="plus5">+5 min</button></div></div>`;
-};
-V.timerdone=()=>{
-  const r=getR(cook.id),i=cook.timerDoneStep,last=i>=r.steps.length-1;
-  return`<div class="screen green">${nav()}<div class="center" style="gap:24px">${badge("blanco")}
-  <div class="col g12"><h1 class="d-m">¡Listo el timer!</h1><p class="bm" style="color:var(--on-accent-2)">Terminó el tiempo del paso ${i+1}.${last?"":" Seguimos con el paso "+(i+2)+"."}</p></div></div>
-  <div class="foot"><button class="btn lightglass wide" data-act="${last?"ackTimer":"ackNext"}">${last?"Volver al paso":"Siguiente paso"+arrowR}</button><button class="btn darkglass wide" data-act="plus5done">+5 min</button></div></div>`;
 };
 V.done=()=>{
   const r=getR(cook.id);
@@ -330,25 +310,10 @@ V.offline=()=>`<div class="screen"><div class="center"><h2 class="t-m">No pudimo
 const app=document.getElementById("app");
 let lastKey="";
 let fitKey="";
-function fitCount(force){
-  const row=document.getElementById("tbig");if(!row||!cook||!cook.timer)return;
-  const num=document.getElementById("tnum"),t=cook.timer;
-  // size from the widest text this timer can show, so it never changes while counting down
-  const worst=t.total>=36000?"88:88:88":t.total>=3600?"8:88:88":t.total>=600?"88:88":"8:88";
-  const max=row.parentNode.clientWidth,key=worst+max;
-  if(!force&&key===fitKey)return;fitKey=key;
-  const real=num.textContent;num.textContent=worst;num.style.fontSize="150px";
-  const w=row.scrollWidth;num.textContent=real;
-  num.style.fontSize=(w>max?Math.floor(150*max/w*0.97):150)+"px";
-}
-window.addEventListener("resize",()=>fitCount(true));
-// The page background is what Safari shows around the page (above, and behind its floating
-// bottom bar). It matches the screen: blue on the full-blue timer screens, the app's gray elsewhere.
+// The page background (what Safari shows around the page) stays the app's gray.
 function tint(){
-  const c=cur(),blue=S.ready&&!S.fail&&(c.n==="timer"||c.n==="timerdone");
-  document.documentElement.classList.toggle("blue-page",blue);
   const m=document.querySelector('meta[name="theme-color"]');
-  if(m){const col=blue?"#3A5171":getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==col)m.setAttribute("content",col);}
+  if(m){const c=getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==c)m.setAttribute("content",c);}
 }
 function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
@@ -372,7 +337,7 @@ function render(){
     c.tabDir=0;
   }else if(entering)app.querySelectorAll(".screen").forEach(el=>el.classList.add("enter"));
   app.querySelectorAll("textarea.bare").forEach(grow);
-  fitCount(true);onScrollBar();tint();
+  onScrollBar();tint();
   if(c.n==="detail")fixOldPhoto(getR(c.id));
   if(entering){lastKey=key;const a=app.querySelector("[autofocus]");a&&a.focus();}
   if(sheet)renderSheet();
@@ -399,7 +364,7 @@ function restoreCook(){
   let snap=null;try{snap=JSON.parse(localStorage.getItem(LS_COOK)||"null");}catch(e){}
   if(!snap||Date.now()-snap.at>6*3600000)return;
   const r=getR(snap.id);if(!r||!(r.steps||[]).length)return;
-  cook={id:r.id,step:Math.min(snap.step,r.steps.length-1),sv:snap.sv||r.servings,checked:new Set(),timer:null,clock:snap.clock};
+  cook={id:r.id,step:Math.min(snap.step,r.steps.length-1),sv:snap.sv||r.servings,checked:new Set(),clock:snap.clock};
   lockOn();stack=[{n:"home"},{n:"detail",id:r.id},{n:"step"}];
 }
 window.addEventListener("hashchange",()=>{if(/#volver/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);});
@@ -416,11 +381,7 @@ A.atajoPaso=(el)=>{if(!sheet)return;sheet.i=Math.max(0,Math.min(ATAJO_STEPS.leng
 A.atajoProbar=()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text=1";};
 const LS_ATAJO="recetario.atajo3",ATAJO="Timer de Recetario";
 function runClock(m){
-  if(cook){const idx=cook.timer?cook.timer.stepIdx:cook.step;
-    if(cook.timer){stopTick();stopAlarm();cook.timer=null;}
-    cook.clock={stepIdx:idx,endAt:Date.now()+m*60000};
-    if(cur().n==="timer"||cur().n==="timerdone"){cook.step=idx;stack=stack.filter(x=>x.n!=="timer"&&x.n!=="timerdone");scrollTo(0,0);}
-    render();}
+  if(cook){cook.clock={stepIdx:cook.step,endAt:Date.now()+m*60000};render();}
   // the minutes go both as the shortcut's input and to the clipboard; the shortcut reads the
   // clipboard (iPhone often drops URL input when the shortcut isn't set to receive it)
   // the shortcut ends with "Abrir app: Safari" to come back; the step is saved first in case
@@ -681,8 +642,8 @@ A.template=async()=>{
 };
 
 /* cooking */
-A.cook=()=>{const c=cur();const r=getR(c.id);cook={id:r.id,step:0,sv:c.sv||r.servings,checked:new Set(),timer:null};lockOn();go("prep");};
-A.resumeCook=()=>{const p=S.state.progress;const r=getR(p.id);cook={id:r.id,step:Math.min(p.step,r.steps.length-1),sv:p.sv||r.servings,checked:new Set(),timer:null};lockOn();stack=[{n:"home"},{n:"detail",id:r.id},{n:"step"}];scrollTo(0,0);render();};
+A.cook=()=>{const c=cur();const r=getR(c.id);cook={id:r.id,step:0,sv:c.sv||r.servings,checked:new Set()};lockOn();go("prep");};
+A.resumeCook=()=>{const p=S.state.progress;const r=getR(p.id);cook={id:r.id,step:Math.min(p.step,r.steps.length-1),sv:p.sv||r.servings,checked:new Set()};lockOn();stack=[{n:"home"},{n:"detail",id:r.id},{n:"step"}];scrollTo(0,0);render();};
 A.tick=(el)=>{const i=+el.dataset.i;cook.checked.has(i)?cook.checked.delete(i):cook.checked.add(i);keepScroll(()=>{});};
 A.startCook=()=>replace("step");
 A.leaveCookPrep=()=>{cook=null;lockOff();back();};
@@ -691,68 +652,11 @@ A.prevStep=()=>{cook.step--;scrollTo(0,0);render();};
 A.stepsSheet=()=>openSheet({t:"steps"});
 A.jumpStep=(el)=>{cook.step=+el.dataset.i;closeSheet();scrollTo(0,0);render();};
 A.askExit=()=>openSheet({t:"exit"});
-A.exitCook=async()=>{closeSheet();const id=cook.id;stopTick();stopAlarm();await setState({progress:{id,step:cook.step,sv:cook.sv,at:Date.now()}});cook=null;lockOff();reset("detail",{id});};
-A.finish=()=>{stopTick();cook.timer=null;if(S.state.progress)setState({progress:null});replace("done");};
+A.exitCook=async()=>{closeSheet();const id=cook.id;await setState({progress:{id,step:cook.step,sv:cook.sv,at:Date.now()}});cook=null;lockOff();reset("detail",{id});};
+A.finish=()=>{if(S.state.progress)setState({progress:null});replace("done");};
 async function saveDone(){}
 A.doneBack=async()=>{const id=cook.id;await saveDone();cook=null;lockOff();reset("detail",{id});};
 A.doneHome=async()=>{await saveDone();cook=null;lockOff();reset();};
-/* timer */
-let tick=null;
-function startTick(){stopTick();tick=setInterval(onTick,250);}
-function stopTick(){clearInterval(tick);tick=null;}
-function onTick(){
-  if(!cook||!cook.timer){stopTick();return;}
-  const left=timerLeft(),txt=fmtClock(left);
-  const num=document.getElementById("tnum"),mini=document.getElementById("tmini");
-  if(num&&num.textContent!==txt){num.textContent=txt;fitCount();}
-  if(mini)mini.textContent=txt;
-  if(left<=0&&cook.timer.running){cook.timerDoneStep=cook.timer.stepIdx;cook.timer=null;stopTick();ring();if(cur().n==="timer")replace("timerdone");else go("timerdone");}
-}
-A.startTimer=(el)=>{const m=+el.dataset.m;cook.timer={total:m*60,left:m*60,endAt:Date.now()+m*60000,running:true,stepIdx:cook.step};unlockAudio();startTick();go("timer");};
-A.showTimer=()=>{unlockAudio();go("timer");};
-A.hideTimer=()=>back();
-A.toggleTimer=()=>{unlockAudio();const t=cook.timer;if(t.running){t.left=timerLeft();t.running=false;}else{t.endAt=Date.now()+t.left*1000;t.running=true;}render();};
-A.plus5=()=>{unlockAudio();const t=cook.timer;if(t.running)t.endAt+=300000;else t.left+=300;t.total+=300;render();};
-A.plus5done=()=>{stopAlarm();cook.timer={total:300,left:300,endAt:Date.now()+300000,running:true,stepIdx:cook.timerDoneStep};startTick();stack=stack.filter(x=>x.n!=="timerdone");stack.push({n:"timer"});render();};
-A.ackTimer=()=>{stopAlarm();cook.step=cook.timerDoneStep;stack=stack.filter(x=>x.n!=="timer"&&x.n!=="timerdone");scrollTo(0,0);render();};
-A.ackNext=()=>{stopAlarm();cook.step=cook.timerDoneStep+1;stack=stack.filter(x=>x.n!=="timer"&&x.n!=="timerdone");scrollTo(0,0);render();};
-// ---- timer alarm ----
-// iPhone keeps Web Audio quiet in silent mode and ignores vibration, so the alarm is a looping
-// <audio> clip (a generated beep-beep-beep) with the audio session set to "playback", which
-// plays even with the ringer off. It is unlocked on the tap that starts the timer and keeps
-// ringing until you act on it (up to 2 minutes). Web Audio beeps are the fallback.
-let actx=null,alarmEl=null,alarmUrl=null,alarmStop=null,beepT=null,titleT=null;
-function alarmWav(){
-  if(alarmUrl)return alarmUrl;
-  const sr=22050,n=Math.floor(sr*1.6),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
-  const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i));};
-  w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
-  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,n*2,true);
-  for(let i=0;i<n;i++){const t=i/sr;let a=0;for(const st of [0,.25,.5]){const u=t-st;if(u>=0&&u<.18){const env=Math.min(1,u/.01)*Math.min(1,(.18-u)/.04);a+=env*(Math.sin(2*Math.PI*880*u)*.75+Math.sin(2*Math.PI*1760*u)*.15);}}
-    v.setInt16(44+i*2,Math.max(-1,Math.min(1,a))*30000,true);}
-  alarmUrl=URL.createObjectURL(new Blob([buf],{type:"audio/wav"}));return alarmUrl;
-}
-function playbackSession(){try{if(navigator.audioSession)navigator.audioSession.type="playback";}catch(e){}}
-function unlockAudio(){
-  playbackSession();
-  try{
-    if(!alarmEl){alarmEl=new Audio(alarmWav());alarmEl.loop=true;alarmEl.preload="auto";alarmEl.setAttribute("playsinline","");}
-    if(alarmEl.paused){alarmEl.muted=true;const p=alarmEl.play();if(p)p.then(()=>{if(!beepT&&!alarmStop){alarmEl.pause();alarmEl.currentTime=0;}alarmEl.muted=false;}).catch(()=>{alarmEl.muted=false;});}
-  }catch(e){}
-  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume();}catch(e){}
-}
-function beep(){if(!actx)return;try{const t=actx.currentTime;[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(0.0001,t+d);g.gain.exponentialRampToValueAtTime(0.3,t+d+.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.18);o.start(t+d);o.stop(t+d+.2);});}catch(e){}}
-function flashTitle(on){clearInterval(titleT);titleT=null;document.title="Recetario";if(on){let k=0;titleT=setInterval(()=>{document.title=(k++%2)?"Recetario":"⏰ ¡Listo el timer!";},1000);}}
-function ring(){
-  stopAlarm();playbackSession();
-  let ok=false;
-  try{if(alarmEl){alarmEl.muted=false;alarmEl.currentTime=0;const p=alarmEl.play();ok=true;if(p)p.catch(()=>{if(!beepT){beep();beepT=setInterval(beep,1600);}});}}catch(e){}
-  if(!ok){beep();beepT=setInterval(beep,1600);}
-  try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400]);}catch(e){}
-  flashTitle(true);
-  alarmStop=setTimeout(stopAlarm,120000);
-}
-function stopAlarm(){clearInterval(beepT);beepT=null;clearTimeout(alarmStop);alarmStop=null;try{if(alarmEl){alarmEl.pause();alarmEl.currentTime=0;}}catch(e){}flashTitle(false);}
 
 /* ================= events ================= */
 document.addEventListener("click",e=>{
@@ -784,7 +688,7 @@ document.addEventListener("keydown",e=>{
   if(draft&&(b.startsWith("in.")||b.startsWith("iq."))){e.preventDefault();const i=+b.split(".")[1];if(i===draft.ings.length-1)A.addIng();else{const n=app.querySelector(`[data-bind="iq.${i+1}"]`);n&&n.focus();}}
 });
 
-if(DEMO)window.__demo={startTick,unlockAudio,alarmState:()=>({el:!!alarmEl,paused:alarmEl?alarmEl.paused:null,title:document.title}),go,reset,setCook:o=>{cook=Object.assign(cook||{checked:new Set()},o);},setCsv:o=>{csv=o;}};
+if(DEMO)window.__demo={go,reset,setCook:o=>{cook=Object.assign(cook||{checked:new Set()},o);},setCsv:o=>{csv=o;}};
 render();
 initStore();
 })();
