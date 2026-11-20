@@ -242,6 +242,13 @@ html.dimmed,html.dimmed body{background-color:var(--bg-dimmed)!important}
 .grab{width:36px;height:4px;border-radius:9px;background:var(--ph);margin:0 auto 4px}
 .sheet .pad{padding:0 2px}
 
+/* ---------- shortcut tutorial ---------- */
+.tut{display:flex;flex-direction:column;gap:10px;padding:4px 8px 8px}
+.tdots{display:flex;gap:5px;margin-bottom:6px}
+.tdots i{flex:1;height:3px;border-radius:9px;background:var(--line)}
+.tdots i.on{background:var(--accent)}
+.sc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:14px 16px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);font-size:15px;line-height:1.4;font-weight:500;margin-top:4px}
+.sc .tok{background:var(--accent-soft);color:var(--accent-ink);padding:2px 9px;border-radius:8px}
 /* ---------- toasts ---------- */
 #toasts{position:fixed;left:0;right:0;bottom:max(108px,calc(env(safe-area-inset-bottom) + 100px));z-index:60;display:flex;justify-content:center;pointer-events:none;padding:0 16px}
 .toast{pointer-events:auto;display:flex;align-items:center;gap:10px;height:44px;padding:0 18px 0 14px;border-radius:999px;background:var(--glass-sheet);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:var(--sh),inset 0 1px 0 var(--glass-edge);animation:in .2s ease-out;color:var(--ink)}

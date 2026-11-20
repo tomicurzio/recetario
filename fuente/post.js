@@ -55,14 +55,14 @@ function renderSheet(){
   }else if(t==="exit"){
     h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">¿Salir del modo cocina?</h2><p class="bm c2">Guardamos que ibas por el paso ${cook.step+1}, podés seguir cuando quieras.</p></div><div class="col g8"><button class="btn pri wide" data-act="closeSheet">Seguir cocinando</button><button class="btn txt wide" data-act="exitCook">Salir</button></div>`;
   }else if(t==="atajo"){
-    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari. Necesitás un atajo; se crea una sola vez:</p>
-    <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
-      <li>Abrí <b class="bm-m" style="color:var(--ink)">Atajos</b> y tocá <b class="bm-m" style="color:var(--ink)">+</b>.</li>
-      <li>Agregá la acción <b class="bm-m" style="color:var(--ink)">Obtener números de la entrada</b>. Tiene que decir «Entrada del atajo»; si no, tocá el campo azul y elegila.</li>
-      <li>Agregá debajo <b class="bm-m" style="color:var(--ink)">Iniciar temporizador</b>, tocá el tiempo y elegí la variable <b class="bm-m" style="color:var(--ink)">Números</b>. Dejá «minutos».</li>
-      <li>Arriba, cambiale el nombre a <b class="bm-m" style="color:var(--ink)">Timer de Recetario</b> y tocá Listo.</li>
-    </ol><p class="cap c2" style="margin-top:4px">La app le manda los minutos como texto; la primera acción los convierte en número para el temporizador.</p></div>
-    <div class="col g8"><a class="btn pri wide" href="shortcuts://">Abrir Atajos</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">Ya lo creé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
+    const i=sheet.i||0,S_=ATAJO_STEPS,st=S_[i],last=i===S_.length-1;
+    h+=`<div class="tut"><div class="tdots" aria-hidden="true">${S_.map((_,k)=>`<i class="${k<=i?"on":""}"></i>`).join("")}</div>
+      <span class="lbl c2">${!i?"Timers en el Reloj":last?"Prueba":`Paso ${i} de ${S_.length-2}`}</span>
+      <h2 class="t-m">${st.t}</h2><p class="bm c2">${st.d}</p>${st.mock||""}${st.note?`<p class="cap c2">${st.note}</p>`:""}</div>
+      <div class="col g8">${st.open?`<a class="btn sec wide" href="shortcuts://">Abrir Atajos</a>`:""}
+      ${last?`<button class="btn pri wide" data-act="atajoProbar">Probar con 1 minuto</button><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">${sheet.m?`Funciona, poner ${sheet.m} min`:"Funciona"}</button>`
+        :`<button class="btn pri wide" data-act="atajoPaso" data-d="1">${i?"Siguiente":"Empezar"}</button>`}
+      ${i?`<button class="btn txt wide" data-act="atajoPaso" data-d="-1">Atrás</button>`:`<button class="btn txt wide" data-act="closeSheet">Ahora no</button>`}</div>`;
   }else if(t==="steps"){
     const r=getR(cook.id);
     h+=`<h2 class="t-m" style="padding:4px 8px 0">Pasos</h2><div class="col g8">${r.steps.map((s,i)=>`<button class="scard" data-act="jumpStep" data-i="${i}" style="${i===cook.step?"box-shadow:inset 0 0 0 1.5px var(--accent)":""}"><span class="bm-m n">${two(i+1)}</span><span class="bm">${esc(s)}</span></button>`).join("")}</div>`;
@@ -402,6 +402,18 @@ function restoreCook(){
   lockOn();stack=[{n:"home"},{n:"detail",id:r.id},{n:"step"}];
 }
 window.addEventListener("hashchange",()=>{if(/#volver/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);});
+const tok=x=>`<span class="tok">${x}</span>`;
+const ATAJO_STEPS=[
+  {t:"Que suene aunque cierres Safari",d:"Los timers de las recetas se ponen en el Reloj del iPhone. Para eso armamos un atajo, una sola vez. Son 5 pasos cortos."},
+  {t:"Creá un atajo nuevo",d:"Abrí la app Atajos y tocá + arriba a la derecha.",open:true},
+  {t:"Agregá «Obtener números»",d:"Buscá la acción «Obtener números de la entrada» y tocala. Tiene que quedar así:",mock:`<div class="sc">Obtener números de ${tok("Entrada del atajo")}</div>`,note:"Si no dice «Entrada del atajo», tocá el campo azul y elegila."},
+  {t:"Agregá el temporizador",d:"Abajo, agregá «Iniciar temporizador». Tocá el tiempo, elegí la variable Números y dejá minutos:",mock:`<div class="sc">Iniciar temporizador por ${tok("Números")} minutos</div>`},
+  {t:"Que vuelva a Safari",d:"Por último, agregá «Abrir app» y elegí Safari. Así, después de poner el timer, volvés a la receta:",mock:`<div class="sc">Abrir ${tok("Safari")}</div>`},
+  {t:"Ponele nombre",d:"Tocá el nombre del atajo, arriba, y escribí exactamente esto. Después tocá Listo.",mock:`<div class="sc" style="justify-content:center"><b class="bl-m">Timer de Recetario</b></div>`},
+  {t:"Probalo",d:"Volvé acá y probalo con un timer de 1 minuto. Si aparece en el Reloj y volvés solo a Safari, ya está.",note:"La primera vez puede que iPhone te pida permiso para abrir Safari: elegí «Permitir»."}
+];
+A.atajoPaso=(el)=>{if(!sheet)return;sheet.i=Math.max(0,Math.min(ATAJO_STEPS.length-1,(sheet.i||0)+ +el.dataset.d));renderSheet();};
+A.atajoProbar=()=>{location.href="shortcuts://run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text=1";};
 const LS_ATAJO="recetario.atajo3",ATAJO="Timer de Recetario";
 function runClock(m){
   if(cook){const idx=cook.timer?cook.timer.stepIdx:cook.step;
@@ -411,17 +423,16 @@ function runClock(m){
     render();}
   // the minutes go both as the shortcut's input and to the clipboard; the shortcut reads the
   // clipboard (iPhone often drops URL input when the shortcut isn't set to receive it)
-  // x-success brings you back to the recipe when the shortcut finishes; the cooking step is
-  // saved first so it comes back even if Safari reloads the page
+  // the shortcut ends with "Abrir app: Safari" to come back; the step is saved first in case
+  // Safari reloads the page on return
   saveCookSnap();
-  const back=location.origin+location.pathname+location.search+"#volver";
-  const url="shortcuts://x-callback-url/run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text="+encodeURIComponent(String(m))+"&x-success="+encodeURIComponent(back)+"&x-cancel="+encodeURIComponent(back)+"&x-error="+encodeURIComponent(back);
+  const url="shortcuts://run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text="+encodeURIComponent(String(m));
   const go=()=>{location.href=url;};
   try{navigator.clipboard.writeText(String(m)).then(go,go);}catch(e){go();}
 }
-A.clockTimer=(el)=>{const m=+el.dataset.m||1;if(lsGet(LS_ATAJO))runClock(m);else openSheet({t:"atajo",m});};
+A.clockTimer=(el)=>{const m=+el.dataset.m||1;if(lsGet(LS_ATAJO))runClock(m);else openSheet({t:"atajo",m,i:0});};
 A.atajoListo=(el)=>{lsSet(LS_ATAJO,"1");closeSheet();const m=+el.dataset.m;if(m)runClock(m);else toast("Listo, los timers van al Reloj");};
-A.atajoSetup=()=>openSheet({t:"atajo"});
+A.atajoSetup=()=>openSheet({t:"atajo",i:0});
 A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tabDir=el.dataset.t==="explorar"?1:-1;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
