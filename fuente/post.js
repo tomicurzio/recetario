@@ -55,9 +55,14 @@ function renderSheet(){
   }else if(t==="exit"){
     h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">¿Salir del modo cocina?</h2><p class="bm c2">Guardamos que ibas por el paso ${cook.step+1}, podés seguir cuando quieras.</p></div><div class="col g8"><button class="btn pri wide" data-act="closeSheet">Seguir cocinando</button><button class="btn txt wide" data-act="exitCook">Salir</button></div>`;
   }else if(t==="atajo"){
-    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari o bloquees el teléfono. La primera vez hay que instalar el atajo «Timer de Recetario»:</p>
-    <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px"><li>Tocá «Instalar atajo» y descargalo.</li><li>Abrilo desde Descargas y tocá «Agregar atajo».</li><li>Volvé acá y tocá «Ya lo instalé».</li></ol></div>
-    <div class="col g8"><a class="btn pri wide" href="atajo/Timer%20de%20Recetario.shortcut" download="Timer de Recetario.shortcut">Instalar atajo</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">Ya lo instalé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
+    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari. Necesitás un atajo; se crea una sola vez:</p>
+    <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+      <li>Abrí <b class="bm-m" style="color:var(--ink)">Atajos</b> y tocá <b class="bm-m" style="color:var(--ink)">+</b>.</li>
+      <li>Agregá la acción <b class="bm-m" style="color:var(--ink)">Iniciar temporizador</b>.</li>
+      <li>Tocá el número del tiempo y elegí <b class="bm-m" style="color:var(--ink)">Entrada del atajo</b> (aparece arriba del teclado). Dejá «minutos».</li>
+      <li>Arriba, cambiale el nombre a <b class="bm-m" style="color:var(--ink)">Timer de Recetario</b> y tocá Listo.</li>
+    </ol></div>
+    <div class="col g8"><a class="btn pri wide" href="shortcuts://">Abrir Atajos</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">Ya lo creé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
   }else if(t==="steps"){
     const r=getR(cook.id);
     h+=`<h2 class="t-m" style="padding:4px 8px 0">Pasos</h2><div class="col g8">${r.steps.map((s,i)=>`<button class="scard" data-act="jumpStep" data-i="${i}" style="${i===cook.step?"box-shadow:inset 0 0 0 1.5px var(--accent)":""}"><span class="bm-m n">${two(i+1)}</span><span class="bm">${esc(s)}</span></button>`).join("")}</div>`;
@@ -315,7 +320,7 @@ V.profile=(p)=>{
   return`<div class="screen">${nav(ibtn("back","caret-left","Volver"))}<div class="body">
   <div class="col g16"><div class="avatar big"><span>${esc(initial())}</span></div><div class="col g4"><h1 class="d-m">${esc(myName()||"Sin nombre")}</h1><p class="bm c2">${esc(S.user&&S.user.email||"")}</p></div></div>
   <div class="field"><label class="lbl c2" for="f-pname">Nombre</label><input class="input" id="f-pname" data-bind="pname" value="${esc(v)}" placeholder="Tu nombre" autocomplete="given-name" enterkeyhint="done"></div>
-  ${IOS?`<div class="field" style="gap:10px"><span class="lbl c2">Timers en el Reloj</span><button class="btn sec wide" data-act="atajoSetup">Reinstalar atajo</button><p class="cap c2">Si al tocar «Iniciar» el timer no aparece en el Reloj del iPhone, o te pregunta el tiempo, volvé a instalar el atajo «Timer de Recetario».</p></div>`:""}
+  ${IOS?`<div class="field" style="gap:10px"><span class="lbl c2">Timers en el Reloj</span><button class="btn sec wide" data-act="atajoSetup">Cómo crear el atajo</button><p class="cap c2">Si al tocar «Iniciar» el timer no aparece en el Reloj, o te pregunta el tiempo, revisá el atajo «Timer de Recetario» en Atajos.</p></div>`:""}
   </div><div class="foot"><button class="btn sec wide" data-act="logout">Cerrar sesión</button></div></div>`;
 };
 V.offline=()=>`<div class="screen"><div class="center"><h2 class="t-m">No pudimos cargar la app</h2><p class="bm c2">Revisá tu conexión y volvé a abrirla.</p><button class="btn pri" data-act="reload">Reintentar</button></div></div>`;
@@ -384,7 +389,7 @@ A.dismissResume=()=>{const p=S.state.progress;if(!p)return;keepScroll(()=>{setSt
 // Clock timer via the "Timer de Recetario" shortcut. Once it is in the Clock, the app's own
 // timer for that step stops (the app can't pause or extend a Clock timer, so there is one timer,
 // not two); the step shows when it ends and you pause or extend it from the Clock.
-const LS_ATAJO="recetario.atajo2",ATAJO="Timer de Recetario";
+const LS_ATAJO="recetario.atajo3",ATAJO="Timer de Recetario";
 function runClock(m){
   if(cook){const idx=cook.timer?cook.timer.stepIdx:cook.step;
     if(cook.timer){stopTick();stopAlarm();cook.timer=null;}
