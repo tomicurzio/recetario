@@ -341,6 +341,7 @@ function render(){
   app.innerHTML=(V[c.n]||V.home)(c);
   app.querySelectorAll("textarea.bare").forEach(grow);
   fitCount(true);onScrollBar();tint();
+  if(c.n==="detail")fixOldPhoto(getR(c.id));
   const key=c.n+(c.s||"");
   if(key!==lastKey){lastKey=key;const a=app.querySelector("[autofocus]");a&&a.focus();}
   if(sheet)renderSheet();
@@ -452,28 +453,67 @@ photoIn.addEventListener("change",async()=>{
   const f=photoIn.files&&photoIn.files[0];if(!f||!draft)return;
   try{const x=await shrink(f,900,.8);draft.photo=x.data;if(x.cut)draft.photoCutout=true;else delete draft.photoCutout;keepScroll(()=>{});}catch(e){toast("No pudimos abrir esa foto");}
 });
-// Shrinks a photo before saving. Photos with a transparent background (a cut-out plate)
-// keep their transparency as PNG so they sit on the blue cover like the drawings;
-// the rest become JPEG. Everything stays under ~230 KB to fit in the recipe document.
+// Removes a plain light background (white or the old beige fill) that touches the edges.
+// iPhone turns gallery images into JPEG on upload, so a cut-out plate arrives with a white
+// background; this flood-fills it from the borders and leaves the dish with a soft edge.
+function whiteCut(c){
+  const w=c.width,h=c.height,cx=c.getContext("2d"),id=cx.getImageData(0,0,w,h),d=id.data;
+  const near=p=>{const i=p*4,r=d[i],g=d[i+1],b=d[i+2],mn=Math.min(r,g,b);return d[i+3]>0&&mn>226&&Math.max(r,g,b)-mn<24;};
+  let tot=0,wh=0;const chk=p=>{tot++;if(near(p))wh++;};
+  for(let x=0;x<w;x+=2){chk(x);chk((h-1)*w+x);}for(let y=0;y<h;y+=2){chk(y*w);chk(y*w+w-1);}
+  if(!tot||wh/tot<0.85)return false;
+  const seen=new Uint8Array(w*h),st=[];
+  const push=p=>{if(!seen[p]&&near(p)){seen[p]=1;st.push(p);}};
+  for(let x=0;x<w;x++){push(x);push((h-1)*w+x);}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1);}
+  while(st.length){const p=st.pop(),x=p%w;if(x>0)push(p-1);if(x<w-1)push(p+1);if(p>=w)push(p-w);if(p<w*(h-1))push(p+w);}
+  let cleared=0;for(let p=0;p<w*h;p++)if(seen[p]){d[p*4+3]=0;cleared++;}
+  if(cleared<w*h*0.05||cleared>w*h*0.97)return false;
+  for(let p=0;p<w*h;p++){if(seen[p])continue;const x=p%w;
+    if((x>0&&seen[p-1])||(x<w-1&&seen[p+1])||(p>=w&&seen[p-w])||(p<w*(h-1)&&seen[p+w])){const i=p*4,m=Math.min(d[i],d[i+1],d[i+2]);if(m>170)d[i+3]=Math.max(0,Math.min(255,Math.round(255*(255-m)/85)));}}
+  cx.putImageData(id,0,0);return true;
+}
+// Draws an image scaled to fit `m` px on a transparent canvas.
+function drawFit(im,m,bg){let w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;const k=Math.min(1,m/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
+  const c=document.createElement("canvas");c.width=w;c.height=h;const cx=c.getContext("2d");if(bg){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}cx.drawImage(im,0,0,w,h);return c;}
+// PNG with transparency, shrunk until it fits in the recipe document (~230 KB).
+function cutPng(im,max,needsWhiteCut){
+  for(const m of [max,720,560,440,340,260]){const c=drawFit(im,m,null);if(needsWhiteCut&&!whiteCut(c))return null;const out=c.toDataURL("image/png");if(out.length<=230000||m===260)return out;}
+  return null;
+}
+// Shrinks a photo before saving. Cut-out photos (transparent, or on a plain white background)
+// are kept as transparent PNG so they sit on the blue cover like the drawings; the rest become JPEG.
 function shrink(file,max,q){
   return new Promise((res,rej)=>{
     const url=URL.createObjectURL(file);const im=new Image();
     im.onload=()=>{
       URL.revokeObjectURL(url);
-      const draw=(m,bg)=>{let w=im.naturalWidth,h=im.naturalHeight;const k=Math.min(1,m/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
-        const c=document.createElement("canvas");c.width=w;c.height=h;const cx=c.getContext("2d");if(bg){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}cx.drawImage(im,0,0,w,h);return c;};
-      let cut=false;
-      try{const t=draw(160,null),d=t.getContext("2d").getImageData(0,0,t.width,t.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]<200)n++;cut=n>(d.length/4)*0.02;}catch(e){}
-      if(cut){
-        for(const m of [max,720,560,440,340]){const out=draw(m,null).toDataURL("image/png");if(out.length<=230000){res({data:out,cut:true});return;}}
-        res({data:draw(260,null).toDataURL("image/png"),cut:true});return;
-      }
-      const c=draw(max,"#F1F0EC");let out=c.toDataURL("image/jpeg",q);if(out.length>230000)out=c.toDataURL("image/jpeg",.6);
-      if(out.length>230000)out=draw(Math.round(max*.7),"#F1F0EC").toDataURL("image/jpeg",.65);
+      let alpha=false;
+      try{const t=drawFit(im,160,null),d=t.getContext("2d").getImageData(0,0,t.width,t.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]<200)n++;alpha=n>(d.length/4)*0.02;}catch(e){}
+      if(alpha){res({data:cutPng(im,max,false),cut:true});return;}
+      let white=false;try{white=whiteCut(drawFit(im,200,null));}catch(e){}
+      if(white){const out=cutPng(im,max,true);if(out){res({data:out,cut:true});return;}}
+      const c=drawFit(im,max,"#F1F0EC");let out=c.toDataURL("image/jpeg",q);if(out.length>230000)out=c.toDataURL("image/jpeg",.6);
+      if(out.length>230000)out=drawFit(im,Math.round(max*.7),"#F1F0EC").toDataURL("image/jpeg",.65);
       res({data:out,cut:false});
     };
     im.onerror=()=>{URL.revokeObjectURL(url);rej();};im.src=url;
   });
+}
+// Photos saved before cut-outs existed: when the owner opens the recipe, remove the plain
+// background once and save it. Checked recipes are marked so this runs only once each.
+const fixing=new Set();
+function fixOldPhoto(r){
+  if(!r||!isMine(r)||!r.photo||r.photoCutout||r.photoChecked||fixing.has(r.id))return;
+  if(!/^data:image\/jpeg/.test(r.photo))return;
+  fixing.add(r.id);
+  const im=new Image();
+  im.onload=async()=>{
+    let out=null;try{if(whiteCut(drawFit(im,200,null)))out=cutPng(im,900,true);}catch(e){}
+    const r2=clone(getR(r.id)||r);
+    if(out){r2.photo=out;r2.photoCutout=true;}else r2.photoChecked=true;
+    await putRecipe(r2);
+  };
+  im.onerror=()=>{};im.src=r.photo;
 }
 
 /* csv */
