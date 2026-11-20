@@ -114,7 +114,7 @@ V.home=(p)=>{
   const q=p.q||"",searching=p.searching;
   const byNew=(a,b)=>(b.createdAt||0)-(a.createdAt||0);
   const own=S.recipes.filter(isMine);
-  const mine=S.recipes.filter(r=>isMine(r)||isFav(r)).sort(byNew);
+  const mine=S.recipes.filter(r=>isMine(r)||isFav(r)).sort((a,b)=>(isFav(b)-isFav(a))||byNew(a,b));
   const others=S.recipes.filter(r=>!isMine(r)).sort(byNew);
   const tab=p.tab||(mine.length?"mis":"explorar");p.tab=tab;
   let list=tab==="mis"?mine:others;
