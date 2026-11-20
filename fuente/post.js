@@ -77,7 +77,7 @@ function fromDraft(d){
   r.servings=Math.max(1,parseInt(r.servings)||1);
   r.ingredients=(d.ings||[]).map(x=>((x.q||"").trim()+" "+(x.n||"").trim()).trim()).filter(Boolean);
   r.steps=(d.steps||[]).map(s=>String(s).trim()).filter(Boolean);
-  delete r.ings;if(!r.photo)delete r.photo;delete r.drawing;
+  delete r.ings;if(!r.photo){delete r.photo;delete r.photoCutout;}delete r.drawing;
   return r;
 }
 function findDup(r){const n=norm(r.name);return S.recipes.find(x=>x.id!==r.id&&isMine(x)&&norm(x.name)===n);}
@@ -95,7 +95,7 @@ V.loading=()=>`<div class="screen"><div class="center"><div class="spin"></div><
 /* ----- home ----- */
 const firstName=n=>String(n||"").trim().split(/\s+/)[0]||"";
 const cardHtml=(r,other)=>{const t=r.time?fmtTime(r.time):(r.steps||[]).length+" pasos";const sub=other&&r.ownerName?firstName(r.ownerName)+" · "+t:t;
-  return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)&&r.photo?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`;};
+  return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)&&fullPhoto(r)?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`;};
 const addCard=`<button class="rc addc" data-act="openAdd"><img src="img/mas.png" width="60" height="60" alt="" draggable="false"><span class="bm-m">Subí tu primera receta</span></button>`;
 const fakeCard=(n,t,k,cls)=>`<div class="rc ${cls}" aria-hidden="true"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`;
 const deck=`<div class="deck" aria-hidden="true">${fakeCard("Tarta de limón","45 min","tarta","dk l")}${fakeCard("Sopa de tomate","30 min","sopa","dk r")}<div class="dfront"><div class="tile"><span class="dic">${ic("pencil-simple",24)}</span></div><div class="tx"><span class="bm-m">Tu primera receta</span><span class="cap" style="color:var(--ph)">¿Cuánto tarda?</span></div></div></div>`;
@@ -136,8 +136,8 @@ V.home=(p)=>{
 V.detail=(p)=>{
   const r=getR(p.id);if(!r)return V.gone();
   const base=r.servings||1,sv=p.sv||base,f=sv/base;
-  let h=`<div class="cbar" id="cbar">${nav(ibtn("back","caret-left","Volver"),`<span class="bm-m cbt">${esc(r.name)}</span>`,"")}</div><div class="screen" style="padding-top:0"><div class="hero" id="hero">${r.photo?`<div class="ph">${pic(r)}</div>`:`<div class="art">${pic(r)}</div>`}
-  ${nav(ibtn("back","caret-left","Volver",r.photo?"":"dark"),"",`<div class="row">${ibtn("fav",isFav(r)?"heart-fill":"heart","Favorita",r.photo?"":"dark")}${ibtn("menu","dots-three","Más",r.photo?"":"dark")}</div>`)}</div>
+  let h=`<div class="cbar" id="cbar">${nav(ibtn("back","caret-left","Volver"),`<span class="bm-m cbt">${esc(r.name)}</span>`,"")}</div><div class="screen" style="padding-top:0"><div class="hero" id="hero">${fullPhoto(r)?`<div class="ph">${pic(r)}</div>`:`<div class="art">${pic(r)}</div>`}
+  ${nav(ibtn("back","caret-left","Volver",""),"",`<div class="row">${ibtn("fav",isFav(r)?"heart-fill":"heart","Favorita","")}${ibtn("menu","dots-three","Más","")}</div>`)}</div>
   <div class="sheetc">
     <div class="titleRow"><div class="col g8"><h1 class="d-m">${esc(r.name)}</h1>${!isMine(r)&&r.ownerName?`<span class="lbl c2">De ${esc(r.ownerName)}</span>`:""}</div>${r.time?`<div class="tm"><span class="d-m ca">${esc(fmtTime(r.time))}</span><span class="lbl c2">Tiempo</span></div>`:""}</div>`;
   if(r.ingredients.length){
@@ -153,7 +153,7 @@ V.gone=()=>`<div class="screen">${nav(ibtn("home","caret-left","Volver"))}<div c
 
 /* ----- forms ----- */
 function photoTile(d){
-  if(d.photo)return`<button class="photoTile has" data-act="photoMenu" aria-label="Foto"><img class="photo" src="${esc(d.photo)}" alt=""></button>`;
+  if(d.photo)return`<button class="photoTile has" data-act="photoMenu" aria-label="Foto"><img class="${d.photoCutout?"ill":"photo"}" src="${esc(d.photo)}" alt=""></button>`;
   return`<button class="photoTile" data-act="pickPhoto">${ic("image",20)}<span class="lbl">Agregá una foto</span></button>`;
 }
 const fTime=d=>`<div class="field"><label class="lbl c2" for="f-time">Tiempo</label><input class="input" id="f-time" data-bind="time" value="${esc(d.time)}" placeholder="ej. 45 min" autocomplete="off"></div>`;
@@ -266,7 +266,7 @@ V.timerdone=()=>{
 V.done=()=>{
   const r=getR(cook.id);
   return`<div class="screen">${nav()}<div class="body">
-  <div class="center" style="gap:32px">${r&&r.photo?`<div class="bigcircle" style="overflow:hidden">${pic(r)}</div>`:`<div style="width:220px;height:165px">${pic(r)}</div>`}<h1 class="t-m">Buen provecho :)</h1></div>
+  <div class="center" style="gap:32px">${fullPhoto(r)?`<div class="bigcircle" style="overflow:hidden">${pic(r)}</div>`:`<div style="width:220px;height:165px">${pic(r)}</div>`}<h1 class="t-m">Buen provecho :)</h1></div>
   </div><div class="foot"><button class="btn pri wide" data-act="doneBack">Volver a la receta</button></div></div>`;
 };
 
@@ -454,19 +454,31 @@ A.saveCopy=async()=>{closeSheet();const r=fromDraft(draft);r.name=r.name+" (copi
 const photoIn=document.getElementById("photoIn");
 A.pickPhoto=()=>{closeSheet();photoIn.value="";photoIn.click();};
 A.photoMenu=()=>openSheet({t:"photo"});
-A.rmPhoto=()=>{closeSheet();delete draft.photo;keepScroll(()=>{});};
+A.rmPhoto=()=>{closeSheet();delete draft.photo;delete draft.photoCutout;keepScroll(()=>{});};
 photoIn.addEventListener("change",async()=>{
   const f=photoIn.files&&photoIn.files[0];if(!f||!draft)return;
-  try{draft.photo=await shrink(f,900,.8);keepScroll(()=>{});}catch(e){toast("No pudimos abrir esa foto");}
+  try{const x=await shrink(f,900,.8);draft.photo=x.data;if(x.cut)draft.photoCutout=true;else delete draft.photoCutout;keepScroll(()=>{});}catch(e){toast("No pudimos abrir esa foto");}
 });
+// Shrinks a photo before saving. Photos with a transparent background (a cut-out plate)
+// keep their transparency as PNG so they sit on the blue cover like the drawings;
+// the rest become JPEG. Everything stays under ~230 KB to fit in the recipe document.
 function shrink(file,max,q){
   return new Promise((res,rej)=>{
     const url=URL.createObjectURL(file);const im=new Image();
-    im.onload=()=>{let w=im.naturalWidth,h=im.naturalHeight;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
-      const c=document.createElement("canvas");c.width=w;c.height=h;const cx=c.getContext("2d");cx.fillStyle="#F1F0EC";cx.fillRect(0,0,w,h);cx.drawImage(im,0,0,w,h);URL.revokeObjectURL(url);
-      let out=c.toDataURL("image/jpeg",q);if(out.length>230000)out=c.toDataURL("image/jpeg",.6);
-      if(out.length>230000){const c2=document.createElement("canvas");c2.width=Math.round(w*.7);c2.height=Math.round(h*.7);c2.getContext("2d").drawImage(c,0,0,c2.width,c2.height);out=c2.toDataURL("image/jpeg",.65);}
-      res(out);};
+    im.onload=()=>{
+      URL.revokeObjectURL(url);
+      const draw=(m,bg)=>{let w=im.naturalWidth,h=im.naturalHeight;const k=Math.min(1,m/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
+        const c=document.createElement("canvas");c.width=w;c.height=h;const cx=c.getContext("2d");if(bg){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}cx.drawImage(im,0,0,w,h);return c;};
+      let cut=false;
+      try{const t=draw(160,null),d=t.getContext("2d").getImageData(0,0,t.width,t.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]<200)n++;cut=n>(d.length/4)*0.02;}catch(e){}
+      if(cut){
+        for(const m of [max,720,560,440,340]){const out=draw(m,null).toDataURL("image/png");if(out.length<=230000){res({data:out,cut:true});return;}}
+        res({data:draw(260,null).toDataURL("image/png"),cut:true});return;
+      }
+      const c=draw(max,"#F1F0EC");let out=c.toDataURL("image/jpeg",q);if(out.length>230000)out=c.toDataURL("image/jpeg",.6);
+      if(out.length>230000)out=draw(Math.round(max*.7),"#F1F0EC").toDataURL("image/jpeg",.65);
+      res({data:out,cut:false});
+    };
     im.onerror=()=>{URL.revokeObjectURL(url);rej();};im.src=url;
   });
 }

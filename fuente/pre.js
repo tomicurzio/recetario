@@ -24,5 +24,6 @@ function illKey(r){
   const id=String(r&&r.id||"x");let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;return ILL_KEYS[h%3];
 }
 const ill=k=>`<img class="ill" src="${DRAW[k]||DRAW.pasta}" alt="" draggable="false">`;
-const pic=r=>r&&r.photo?`<img class="photo" src="${esc(r.photo)}" alt="">`:ill(illKey(r));
+const fullPhoto=r=>!!(r&&r.photo&&!r.photoCutout);
+const pic=r=>r&&r.photo?(r.photoCutout?`<img class="ill" src="${esc(r.photo)}" alt="" draggable="false">`:`<img class="photo" src="${esc(r.photo)}" alt="">`):ill(illKey(r));
 document.getElementById("deskArt").innerHTML=ill("pasta");
