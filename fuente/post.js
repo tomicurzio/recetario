@@ -31,8 +31,10 @@ function toast(msg,actLabel,actFn,ms){
 
 /* ================= sheets ================= */
 let sheet=null;
-function openSheet(s){sheet=s;renderSheet();requestAnimationFrame(()=>document.getElementById("layer").classList.add("open"));}
-function closeSheet(){sheet=null;document.getElementById("layer").classList.remove("open");}
+// The dim also tints the page background, so the strip behind Safari's floating bottom bar
+// turns gray with the rest of the screen instead of staying light.
+function openSheet(s){sheet=s;renderSheet();requestAnimationFrame(()=>{if(!sheet)return;document.getElementById("layer").classList.add("open");document.documentElement.classList.add("dimmed");});}
+function closeSheet(){sheet=null;document.getElementById("layer").classList.remove("open");document.documentElement.classList.remove("dimmed");}
 const optRow=(icon,title,act,danger)=>`<button class="opt ${danger?"danger":""}" data-act="${act}"><span class="oi">${ic(icon,22)}</span><span class="ot bl-m">${esc(title)}</span><span class="ch">${ic("caret-right",18)}</span></button>`;
 function renderSheet(){
   if(!sheet)return;
