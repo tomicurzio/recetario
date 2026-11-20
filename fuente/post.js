@@ -98,7 +98,7 @@ const V={};
 const ibtn=(act,icon,label,cls="")=>`<button class="ib ${cls}" data-act="${act}" aria-label="${label}">${ic(icon,20)}</button>`;
 const spacer=`<span style="width:44px;flex:none"></span>`;
 const nav=(l,m,r)=>`<div class="nav r16">${l||spacer}<div class="mid">${m||""}</div>${r||spacer}</div>`;
-const stepper=(act,v)=>`<div class="stepper"><button data-act="${act}" data-d="-1" aria-label="Menos">${ic("minus",18)}</button><span class="bl-m" data-sv>${v}</span><button data-act="${act}" data-d="1" aria-label="Más">${ic("plus",18)}</button></div>`;
+const stepper=(act,v,unit)=>`<div class="stepper${unit?" wide":""}"><button data-act="${act}" data-d="-1" aria-label="${unit?"Menos porciones":"Menos"}">${ic("minus",18)}</button><span class="bl-m" data-sv>${v}${unit?` <span class="c2" style="font-weight:400">${v===1?"porción":"porciones"}</span>`:""}</span><button data-act="${act}" data-d="1" aria-label="${unit?"Más porciones":"Más"}">${ic("plus",18)}</button></div>`;
 const arrowR="";
 
 V.loading=()=>`<div class="screen"><div class="center"><div class="spin"></div></div></div>`;
@@ -152,7 +152,7 @@ V.detail=(p)=>{
   <div class="sheetc">
     <div class="titleRow"><div class="col g8"><h1 class="d-m">${esc(r.name)}</h1>${!isMine(r)&&r.ownerName?`<span class="lbl c2">De ${esc(r.ownerName)}</span>`:""}</div>${r.time?`<div class="tm"><span class="d-m ca">${esc(fmtTime(r.time))}</span><span class="lbl c2">Tiempo</span></div>`:""}</div>`;
   if(r.ingredients.length){
-    h+=`<div class="col g8"><div class="between"><h2 class="hl">Ingredientes</h2>${stepper("sv",sv)}</div><div class="rows">${r.ingredients.map(i=>{const x=ingText(i,f);return`<div class="r"><span class="bm">${esc(x.name)}</span>${x.q?`<span class="bm-m ca">${esc(x.q)}</span>`:""}</div>`}).join("")}</div>${sv!==base?`<p class="cap ca">Cantidades para ${sv} porciones</p>`:""}</div>`;
+    h+=`<div class="col g8"><div class="between"><h2 class="hl">Ingredientes</h2>${stepper("sv",sv,true)}</div><div class="rows">${r.ingredients.map(i=>{const x=ingText(i,f);return`<div class="r"><span class="bm">${esc(x.name)}</span>${x.q?`<span class="bm-m ca">${esc(x.q)}</span>`:""}</div>`}).join("")}</div>${sv!==base?`<p class="cap ca">Cantidades para ${sv} porciones</p>`:""}</div>`;
   }
   if(r.steps.length){
     h+=`<div class="col g16"><div class="between" style="align-items:baseline"><h2 class="t-m">Pasos</h2><span class="lbl c2">${r.steps.length} ${r.steps.length===1?"paso":"pasos"}${r.time?" · "+esc(fmtTime(r.time)):""}</span></div><div class="col g8">${r.steps.map((s,i)=>`<div class="scard"><span class="bm-m n">${two(i+1)}</span><span class="bm">${esc(s)}</span></div>`).join("")}</div></div>`;
