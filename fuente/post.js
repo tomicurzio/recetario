@@ -55,7 +55,7 @@ function renderSheet(){
   }else if(t==="exit"){
     h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">¿Salir del modo cocina?</h2><p class="bm c2">Guardamos que ibas por el paso ${cook.step+1}, podés seguir cuando quieras.</p></div><div class="col g8"><button class="btn pri wide" data-act="closeSheet">Seguir cocinando</button><button class="btn txt wide" data-act="exitCook">Salir</button></div>`;
   }else if(t==="atajo"){
-    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Así suena aunque cierres Safari o bloquees el teléfono. La primera vez hay que instalar el atajo «Timer de Recetario»:</p>
+    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari o bloquees el teléfono. La primera vez hay que instalar el atajo «Timer de Recetario»:</p>
     <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px"><li>Tocá «Instalar atajo» y descargalo.</li><li>Abrilo desde Descargas y tocá «Agregar atajo».</li><li>Volvé acá y tocá «Ya lo instalé».</li></ol></div>
     <div class="col g8"><a class="btn pri wide" href="atajo/Timer%20de%20Recetario.shortcut" download="Timer de Recetario.shortcut">Instalar atajo</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m}">Ya lo instalé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
   }else if(t==="steps"){
@@ -248,9 +248,9 @@ V.step=()=>{
   if(needs.length)h+=`<div class="col g12"><span class="lbl c2">Necesitás</span><div class="chips">${needs.map(x=>`<span class="chip soft">${esc(x)}</span>`).join("")}</div></div>`;
   const ck=cook.clock&&cook.clock.stepIdx===i?cook.clock:null;
   if(ck&&!(tm&&tm.stepIdx===i)){const d=new Date(ck.endAt),hm=d.getHours()+":"+two(d.getMinutes());
-    h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${Date.now()<ck.endAt?"Termina a las "+hm:"Terminó a las "+hm}</span><span class="cap c2">En el Reloj del iPhone. Pausalo o sumale tiempo desde ahí.</span></span></div>`;}
+    h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${Date.now()<ck.endAt?"Termina a las "+hm:"Terminó a las "+hm}</span><span class="cap c2">En el Reloj del iPhone. Pausalo o sumale tiempo desde ahí.</span></span>${mins?`<button class="btn sec sm" data-act="clockTimer" data-m="${mins}">De nuevo</button>`:""}</div>`;}
   else if(tm&&tm.stepIdx===i)h+=`<button class="timerbox" data-act="showTimer"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m" id="tmini">${fmtClock(timerLeft())}</span><span class="cap c2">${tm.running?"Timer corriendo":"Timer en pausa"}</span></span><span class="cm" style="padding-right:8px">${ic("caret-right",18)}</span></button>`;
-  else if(mins)h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${mins} min</span><span class="cap c2">Timer de este paso</span></span><button class="btn pri sm" data-act="startTimer" data-m="${mins}">Iniciar</button></div>`+(IOS?`<button class="addrow bm-m" style="margin-top:-12px" data-act="clockTimer" data-m="${mins}">Ponerlo en el Reloj del iPhone</button>`:"");
+  else if(mins)h+=`<div class="timerbox"><span class="c2">${ic("timer",22)}</span><span class="tx col g4"><span class="bl-m">${mins} min</span><span class="cap c2">${IOS?"Se pone en el Reloj del iPhone":"Timer de este paso"}</span></span><button class="btn pri sm" data-act="${IOS?"clockTimer":"startTimer"}" data-m="${mins}">Iniciar</button></div>`;
   h+=`</div><div class="foot row"><button class="btn txt" data-act="prevStep" ${i===0?"disabled":""}>Atrás</button>${i<n-1?`<button class="btn pri" data-act="nextStep">Siguiente paso${arrowR}</button>`:`<button class="btn pri" data-act="finish" style="min-width:150px">Terminar</button>`}</div></div>`;
   return h;
 };
@@ -264,7 +264,7 @@ V.timer=()=>{
   <h1 class="t-m">Paso ${t.stepIdx+1}</h1>
   <div class="col g8"><div class="countrow" id="tbig"><span class="count" id="tnum">${txt}</span></div><div class="d-mr" style="color:var(--on-accent-2)">de ${fmtTotal(t.total)}</div></div>
   <p class="bm" style="color:var(--on-accent-2)">${esc(r.steps[t.stepIdx])}</p>
-  <p class="cap" style="color:var(--on-accent-2);opacity:.75">Dejá esta pantalla abierta: va a sonar cuando termine, aunque el teléfono esté en silencio.</p>${IOS?`<button class="addrow bm-m" style="color:#fff" data-act="clockTimer" data-m="${Math.max(1,Math.ceil(left/60))}">Mejor, ponerlo en el Reloj del iPhone</button>`:""}
+  <p class="cap" style="color:var(--on-accent-2);opacity:.75">Dejá esta pantalla abierta: va a sonar cuando termine, aunque el teléfono esté en silencio.</p>
   </div><div class="foot row" style="gap:8px"><button class="btn lightglass" style="flex:1" data-act="toggleTimer">${t.running?"Pausa":"Seguir"}</button><button class="btn darkglass" style="flex:1" data-act="plus5">+5 min</button></div></div>`;
 };
 V.timerdone=()=>{
