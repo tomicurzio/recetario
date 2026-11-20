@@ -338,12 +338,16 @@ function render(){
   if(!S.ready){app.innerHTML=V.loading();return;}
   const c=cur();
   if(c.n==="home"&&c.searching&&document.activeElement&&document.activeElement.id==="q"){updateHomeList();return;}
+  // fade in only when moving to another screen; redraws of the same screen (portions, favorites,
+  // data arriving) swap instantly so nothing blinks
   app.innerHTML=(V[c.n]||V.home)(c);
+  const key=c.n+(c.s||"")+"|"+(c.id||"")+"|"+(c.tab||"");
+  const entering=key!==lastKey;
+  if(entering)app.querySelectorAll(".screen").forEach(el=>el.classList.add("enter"));
   app.querySelectorAll("textarea.bare").forEach(grow);
   fitCount(true);onScrollBar();tint();
   if(c.n==="detail")fixOldPhoto(getR(c.id));
-  const key=c.n+(c.s||"");
-  if(key!==lastKey){lastKey=key;const a=app.querySelector("[autofocus]");a&&a.focus();}
+  if(entering){lastKey=key;const a=app.querySelector("[autofocus]");a&&a.focus();}
   if(sheet)renderSheet();
 }
 function updateHomeList(){const c=cur();const tmp=document.createElement("div");tmp.innerHTML=V.home(c);const nb=tmp.querySelector(".body"),ob=app.querySelector(".body");if(nb&&ob)ob.replaceWith(nb);}
