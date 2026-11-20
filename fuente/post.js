@@ -25,7 +25,8 @@ let toastT=null,toastAct=null;
 function toast(msg,actLabel,actFn,ms,top){
   const el=document.getElementById("toasts");
   toastAct=actFn||null;el.classList.toggle("top",!!top);
-  el.innerHTML=`<div class="toast"><span class="lbl">${esc(msg)}</span>${actLabel?`<button data-act="toastAct">${esc(actLabel)}</button>`:""}</div>`;
+  const ok=!/^(No |Escrib|Ponele)/.test(msg);
+  el.innerHTML=`<div class="toast">${ok?`<img class="tck" src="img/check-azul.png" width="32" height="32" alt="" draggable="false">`:ic("warning-circle",22)}<span class="lbl">${esc(msg)}</span>${actLabel?`<button data-act="toastAct">${esc(actLabel)}</button>`:""}</div>`;
   clearTimeout(toastT);toastT=setTimeout(()=>{const t=el.firstChild;if(top&&t){t.classList.add("out");toastT=setTimeout(()=>{el.innerHTML="";toastAct=null},220);}else{el.innerHTML="";toastAct=null}},ms||(actLabel?5000:2400));
 }
 

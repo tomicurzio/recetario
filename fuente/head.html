@@ -321,13 +321,17 @@ html.dimmed,html.dimmed body{background-color:var(--bg-dimmed)!important}
 .sheet{isolation:isolate;box-shadow:0 16px 48px rgba(26,20,13,.14),inset 0 0 0 1px rgba(255,255,255,.6),inset 2px 2px 3px rgba(255,255,255,.95),inset 0 0 22px rgba(255,255,255,.35)}
 .sheet::before{background:linear-gradient(160deg,rgba(255,255,255,.4) 0%,rgba(255,255,255,0) 30%)}
 /* ---------- toasts ---------- */
-#toasts{position:fixed;left:0;right:0;bottom:max(108px,calc(env(safe-area-inset-bottom) + 100px));z-index:60;display:flex;justify-content:center;pointer-events:none;padding:0 16px}
-.toast{pointer-events:auto;display:flex;align-items:center;gap:10px;height:44px;padding:0 18px 0 14px;border-radius:999px;background:var(--glass-sheet);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:var(--sh),inset 0 1px 0 var(--glass-edge);animation:in .2s ease-out;color:var(--ink)}
+#toasts{position:fixed;left:0;right:0;bottom:max(108px,calc(env(safe-area-inset-bottom) + 100px));z-index:60;display:flex;justify-content:center;pointer-events:none;padding:0 8px}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:12px;width:100%;max-width:520px;min-height:60px;padding:12px 20px 12px 14px;border-radius:24px;font-size:16px;background:var(--glass-sheet);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:var(--sh),inset 0 1px 0 var(--glass-edge);animation:in .2s ease-out;color:var(--ink)}
 #toasts.top{bottom:auto;top:max(12px,calc(env(safe-area-inset-top) + 8px))}
 #toasts.top .toast{animation:tdown .32s cubic-bezier(.2,.9,.3,1.15)}
 #toasts.top .toast.out{animation:tup .22s ease-in forwards}
 @keyframes tdown{from{opacity:0;transform:translateY(-120%)}to{opacity:1;transform:none}}
 @keyframes tup{to{opacity:0;transform:translateY(-120%)}}
+.toast .lbl{flex:1;min-width:0}
+.toast .tck{width:32px;height:32px;flex:none}
+.toast>svg{flex:none;color:var(--danger,#B3402E);margin:0 5px}
+#toasts.top{padding:0 8px}
 .toast button{color:var(--accent-ink);font-size:14px;font-weight:500;padding:8px 0 8px 4px}
 
 /* ---------- cooking ---------- */
