@@ -312,7 +312,7 @@ V.name=(p)=>{
 };
 V.profile=(p)=>{
   const v=p.pname!=null?p.pname:myName();
-  return`<div class="screen">${nav(ibtn("back","caret-left","Volver"),`<span class="lbl c2">Perfil</span>`,"")}<div class="body">
+  return`<div class="screen">${nav(ibtn("back","caret-left","Volver"))}<div class="body">
   <div class="col g16"><div class="avatar big"><span>${esc(initial())}</span></div><div class="col g4"><h1 class="d-m">${esc(myName()||"Sin nombre")}</h1><p class="bm c2">${esc(S.user&&S.user.email||"")}</p></div></div>
   <div class="field"><label class="lbl c2" for="f-pname">Nombre</label><input class="input" id="f-pname" data-bind="pname" value="${esc(v)}" placeholder="Tu nombre" autocomplete="given-name" enterkeyhint="done"></div>
   </div><div class="foot"><button class="btn sec wide" data-act="logout">Cerrar sesión</button></div></div>`;
