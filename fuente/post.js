@@ -118,8 +118,8 @@ V.home=(p)=>{
     :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">${title}</h1><div class="row">${base.length?ibtn("search","magnifying-glass","Buscar"):""}<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button></div></div>`;
   h+=`<div class="body" style="gap:16px;padding-bottom:120px">`;
   if(S.slow)h+=`<div class="notice danger">${ic("warning-circle",18)}<span>No pudimos conectarnos todavía. Seguimos intentando.</span></div>`;
-  if(tab==="mis"&&prog&&!searching){const r=getR(prog.id);
-    h+=`<button class="resume" data-act="resumeCook"><span class="tx"><b class="bm-m">${esc(r.name)}</b><span class="cap" style="color:var(--on-accent-2)">Ibas por el paso ${prog.step+1} de ${r.steps.length}</span></span><span class="ib dark">${ic("arrow-right",20)}</span></button>`;}
+  if(tab==="mis"&&prog&&!searching){const r=getR(prog.id),tot=(r.steps||[]).length||1,st=Math.min(prog.step+1,tot);
+    h+=`<div class="resume2"><button class="rtap" data-act="resumeCook"><span class="rtile">${pic(r)}</span><span class="rtx"><span class="lbl ca">Seguí cocinando</span><b class="bm-m">${esc(r.name)}</b><span class="rbar" aria-hidden="true"><i style="width:${Math.round(st/tot*100)}%"></i></span><span class="cap c2">Paso ${st} de ${tot}</span></span></button><button class="rx" data-act="dismissResume" aria-label="Quitar de inicio">${ic("x",16)}</button></div>`;}
   if(tab==="mis"&&!mine.length){
     h+=`<div class="col" style="align-items:center;padding-top:4px">${deck}<div class="col g8" style="text-align:center;align-items:center"><h2 class="t-m">Empezá tu recetario</h2><p class="bm c2" style="max-width:280px">Guardá las recetas de tu casa y cocinalas paso a paso.</p></div></div>
     <div class="col g4" style="padding-top:4px"><button class="btn pri wide" data-act="addManual">Escribir una receta</button><button class="btn txt wide" data-act="addCsv">Importar desde un CSV</button></div>`;
@@ -364,6 +364,7 @@ A.back=back;A.home=()=>{closeSheet();reset();};
 A.toastAct=()=>{const f=toastAct;document.getElementById("toasts").innerHTML="";toastAct=null;f&&f();};
 A.closeSheet=closeSheet;
 A.openAdd=()=>openSheet({t:"add"});
+A.dismissResume=()=>{const p=S.state.progress;if(!p)return;keepScroll(()=>{setState({progress:null});});toast("Listo, lo sacamos","Deshacer",()=>setState({progress:p}).then(()=>render()));};
 A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
