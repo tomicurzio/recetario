@@ -105,7 +105,7 @@ V.loading=()=>`<div class="screen"><div class="center"><div class="spin"></div><
 
 /* ----- home ----- */
 const firstName=n=>String(n||"").trim().split(/\s+/)[0]||"";
-const cardHtml=(r,other)=>{const t=r.time?fmtTime(r.time):(r.steps||[]).length+" pasos";const sub=other&&r.ownerName?firstName(r.ownerName)+" · "+t:t;
+const cardHtml=(r,other)=>{const t=r.time?fmtTime(r.time):((r.steps||[]).length===1?"1 paso":(r.steps||[]).length+" pasos");const sub=other&&r.ownerName?firstName(r.ownerName)+" · "+t:t;
   return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)&&fullPhoto(r)?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`;};
 const addCard=`<button class="rc addc" data-act="openAdd"><img src="img/mas.png" width="60" height="60" alt="" draggable="false"><span class="bm-m">Subí tu primera receta</span></button>`;
 const fakeCard=(n,t,k,cls)=>`<div class="rc ${cls}" aria-hidden="true"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`;
@@ -260,10 +260,13 @@ V.step=()=>{
   return h;
 };
 V.done=()=>{
-  const r=getR(cook.id);
-  return`<div class="screen">${nav()}<div class="body">
-  <div class="center" style="gap:32px">${fullPhoto(r)?`<div class="bigcircle" style="overflow:hidden">${pic(r)}</div>`:`<div style="width:220px;height:165px">${pic(r)}</div>`}<h1 class="t-m">Buen provecho :)</h1></div>
-  </div><div class="foot"><button class="btn pri wide" data-act="doneBack">Volver a la receta</button></div></div>`;
+  const r=getR(cook.id);if(!r)return V.gone();
+  const t=r.time?fmtTime(r.time):((r.steps||[]).length===1?"1 paso":(r.steps||[]).length+" pasos"),fav=isFav(r);
+  return`<div class="screen done">
+  <div class="dcover"><div class="dstage"><div class="rc dcard" aria-hidden="true"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(t)}</span></div></div>
+    <button class="ib dfav" data-act="doneFav" aria-label="${fav?"Sacar de favoritas":"Guardar en favoritas"}">${ic(fav?"heart-fill":"heart",24)}</button></div></div>
+  <div class="dsheet"><h1 class="d-m">¡Buen provecho!</h1><p class="bm c2">${fav?"Quedó guardada en tus favoritas.":"Si te gustó, guardala en favoritas con el corazón."}</p>
+  <div class="col g4" style="padding-top:8px"><button class="btn pri wide" data-act="doneBack">Volver a la receta</button><button class="btn txt wide" data-act="doneHome">Ir al inicio</button></div></div></div>`;
 };
 
 /* ----- cuenta ----- */
@@ -316,7 +319,7 @@ let fitKey="";
 function toHex(c){c=String(c).trim();if(/^#[0-9a-f]{6}$/i.test(c))return c.toUpperCase();const m=String(c).match(/\d+(\.\d+)?/g);if(!m||m.length<3)return "#F7F6F3";return "#"+m.slice(0,3).map(x=>Math.round(+x).toString(16).padStart(2,"0")).join("").toUpperCase();}
 function tint(){
   const c=cur(),bar=document.getElementById("cbar"),root=document.documentElement,css=getComputedStyle(root);
-  const blue=S.ready&&!S.fail&&(c.n==="welcome"||(c.n==="detail"&&!(bar&&bar.classList.contains("on"))));
+  const blue=S.ready&&!S.fail&&(c.n==="welcome"||c.n==="done"||(c.n==="detail"&&!(bar&&bar.classList.contains("on"))));
   const dim=root.classList.contains("dimmed");
   // read the theme tokens, not the live background (it may be mid-transition)
   const col=blue?(dim?"#354A66":"#3A5171"):toHex(css.getPropertyValue(dim?"--bg-dimmed":"--bg").trim());
@@ -663,6 +666,7 @@ A.askExit=()=>openSheet({t:"exit"});
 A.exitCook=async()=>{closeSheet();const id=cook.id;await setState({progress:{id,step:cook.step,sv:cook.sv,at:Date.now()}});cook=null;lockOff();reset("detail",{id});};
 A.finish=()=>{if(S.state.progress)setState({progress:null});replace("done");};
 async function saveDone(){}
+A.doneFav=async()=>{if(!cook)return;await toggleFav(cook.id);};
 A.doneBack=async()=>{const id=cook.id;await saveDone();cook=null;lockOff();reset("detail",{id});};
 A.doneHome=async()=>{await saveDone();cook=null;lockOff();reset();};
 
