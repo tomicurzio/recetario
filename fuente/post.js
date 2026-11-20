@@ -355,9 +355,16 @@ function render(){
   // fade in only when moving to another screen; redraws of the same screen (portions, favorites,
   // data arriving) swap instantly so nothing blinks
   app.innerHTML=(V[c.n]||V.home)(c);
-  const key=c.n+(c.s||"")+"|"+(c.id||"")+"|"+(c.tab||"");
+  const base=c.n+(c.s||"")+"|"+(c.id||""),key=base+"|"+(c.tab||"");
   const entering=key!==lastKey;
-  if(entering)app.querySelectorAll(".screen").forEach(el=>el.classList.add("enter"));
+  const tabSwitch=entering&&c.n==="home"&&c.tabDir&&lastKey.startsWith(base+"|")&&lastKey!==base+"|";
+  if(tabSwitch){
+    // switching Mis recetas <-> Explorar: content slides in from the side of the tab you picked
+    const b=app.querySelector(".body");b&&b.classList.add(c.tabDir>0?"tab-in-r":"tab-in-l");
+    const t=app.querySelector(".nav h1");t&&t.classList.add("tab-fade");
+    const on=app.querySelector(".tb.on");on&&on.classList.add("pop");
+    c.tabDir=0;
+  }else if(entering)app.querySelectorAll(".screen").forEach(el=>el.classList.add("enter"));
   app.querySelectorAll("textarea.bare").forEach(grow);
   fitCount(true);onScrollBar();tint();
   if(c.n==="detail")fixOldPhoto(getR(c.id));
@@ -389,7 +396,7 @@ function runClock(m){
 A.clockTimer=(el)=>{const m=+el.dataset.m||1;if(lsGet(LS_ATAJO))runClock(m);else openSheet({t:"atajo",m});};
 A.atajoListo=(el)=>{lsSet(LS_ATAJO,"1");closeSheet();const m=+el.dataset.m;if(m)runClock(m);else toast("Listo, los timers van al Reloj");};
 A.atajoSetup=()=>openSheet({t:"atajo"});
-A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
+A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tabDir=el.dataset.t==="explorar"?1:-1;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
 A.open=(el)=>{closeSheet();go("detail",{id:el.dataset.id});};

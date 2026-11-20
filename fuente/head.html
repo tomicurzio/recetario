@@ -183,6 +183,14 @@ textarea.bare{resize:none;display:block}
 .rx{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .rx:active{background:var(--tile)}
 /* ---------- home tabs ---------- */
+@keyframes tabInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes tabInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.88)}60%{transform:scale(1.04)}100%{transform:none}}
+.body.tab-in-r{animation:tabInR .28s cubic-bezier(.2,.8,.2,1)}
+.body.tab-in-l{animation:tabInL .28s cubic-bezier(.2,.8,.2,1)}
+.tab-fade{animation:in .22s ease-out}
+.tb.on.pop{animation:pop .32s cubic-bezier(.2,.9,.3,1)}
+@media (prefers-reduced-motion:reduce){.body.tab-in-r,.body.tab-in-l,.tb.on.pop{animation:in .15s ease-out}}
 .tabbar{position:fixed;z-index:20;left:max(24px,calc(50% - 216px));bottom:calc(max(24px,calc(env(safe-area-inset-bottom) + 12px)) + 1px);display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:var(--sh),inset 0 0 0 1px rgba(255,255,255,.6)}
 .tb{height:44px;border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--muted);transition:background .15s,padding .15s}
 .tb .lbl{display:none;font-size:14px;line-height:1.2;font-weight:500}
