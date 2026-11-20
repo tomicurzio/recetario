@@ -57,7 +57,7 @@ function renderSheet(){
   }else if(t==="atajo"){
     h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari o bloquees el teléfono. La primera vez hay que instalar el atajo «Timer de Recetario»:</p>
     <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px"><li>Tocá «Instalar atajo» y descargalo.</li><li>Abrilo desde Descargas y tocá «Agregar atajo».</li><li>Volvé acá y tocá «Ya lo instalé».</li></ol></div>
-    <div class="col g8"><a class="btn pri wide" href="atajo/Timer%20de%20Recetario.shortcut" download="Timer de Recetario.shortcut">Instalar atajo</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m}">Ya lo instalé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
+    <div class="col g8"><a class="btn pri wide" href="atajo/Timer%20de%20Recetario.shortcut" download="Timer de Recetario.shortcut">Instalar atajo</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">Ya lo instalé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
   }else if(t==="steps"){
     const r=getR(cook.id);
     h+=`<h2 class="t-m" style="padding:4px 8px 0">Pasos</h2><div class="col g8">${r.steps.map((s,i)=>`<button class="scard" data-act="jumpStep" data-i="${i}" style="${i===cook.step?"box-shadow:inset 0 0 0 1.5px var(--accent)":""}"><span class="bm-m n">${two(i+1)}</span><span class="bm">${esc(s)}</span></button>`).join("")}</div>`;
@@ -315,6 +315,7 @@ V.profile=(p)=>{
   return`<div class="screen">${nav(ibtn("back","caret-left","Volver"))}<div class="body">
   <div class="col g16"><div class="avatar big"><span>${esc(initial())}</span></div><div class="col g4"><h1 class="d-m">${esc(myName()||"Sin nombre")}</h1><p class="bm c2">${esc(S.user&&S.user.email||"")}</p></div></div>
   <div class="field"><label class="lbl c2" for="f-pname">Nombre</label><input class="input" id="f-pname" data-bind="pname" value="${esc(v)}" placeholder="Tu nombre" autocomplete="given-name" enterkeyhint="done"></div>
+  ${IOS?`<div class="field" style="gap:10px"><span class="lbl c2">Timers en el Reloj</span><button class="btn sec wide" data-act="atajoSetup">Reinstalar atajo</button><p class="cap c2">Si al tocar «Iniciar» el timer no aparece en el Reloj del iPhone, o te pregunta el tiempo, volvé a instalar el atajo «Timer de Recetario».</p></div>`:""}
   </div><div class="foot"><button class="btn sec wide" data-act="logout">Cerrar sesión</button></div></div>`;
 };
 V.offline=()=>`<div class="screen"><div class="center"><h2 class="t-m">No pudimos cargar la app</h2><p class="bm c2">Revisá tu conexión y volvé a abrirla.</p><button class="btn pri" data-act="reload">Reintentar</button></div></div>`;
@@ -386,7 +387,8 @@ function runClock(m){
   location.href="shortcuts://run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text="+encodeURIComponent(String(m));
 }
 A.clockTimer=(el)=>{const m=+el.dataset.m||1;if(lsGet(LS_ATAJO))runClock(m);else openSheet({t:"atajo",m});};
-A.atajoListo=(el)=>{lsSet(LS_ATAJO,"1");closeSheet();runClock(+el.dataset.m||1);};
+A.atajoListo=(el)=>{lsSet(LS_ATAJO,"1");closeSheet();const m=+el.dataset.m;if(m)runClock(m);else toast("Listo, los timers van al Reloj");};
+A.atajoSetup=()=>openSheet({t:"atajo"});
 A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
