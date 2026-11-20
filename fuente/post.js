@@ -224,7 +224,7 @@ let cook=null;
 let wake=null;
 async function lockOn(){try{if("wakeLock" in navigator&&!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null});}}catch(e){}}
 function lockOff(){try{wake&&wake.release()}catch(e){}wake=null;}
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cook)lockOn();});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cook){lockOn();if(cook.timer)onTick();}});
 
 V.prep=()=>{
   const r=getR(cook.id);if(!r)return V.gone();
@@ -257,6 +257,7 @@ V.timer=()=>{
   <h1 class="t-m">Paso ${t.stepIdx+1}</h1>
   <div class="col g8"><div class="countrow" id="tbig"><span class="count" id="tnum">${txt}</span></div><div class="d-mr" style="color:var(--on-accent-2)">de ${fmtTotal(t.total)}</div></div>
   <p class="bm" style="color:var(--on-accent-2)">${esc(r.steps[t.stepIdx])}</p>
+  <p class="cap" style="color:var(--on-accent-2);opacity:.75">Dejá esta pantalla abierta: va a sonar cuando termine, aunque el teléfono esté en silencio.</p>
   </div><div class="foot row" style="gap:8px"><button class="btn lightglass" style="flex:1" data-act="toggleTimer">${t.running?"Pausa":"Seguir"}</button><button class="btn darkglass" style="flex:1" data-act="plus5">+5 min</button></div></div>`;
 };
 V.timerdone=()=>{
@@ -639,18 +640,50 @@ function onTick(){
   if(left<=0&&cook.timer.running){cook.timerDoneStep=cook.timer.stepIdx;cook.timer=null;stopTick();ring();if(cur().n==="timer")replace("timerdone");else go("timerdone");}
 }
 A.startTimer=(el)=>{const m=+el.dataset.m;cook.timer={total:m*60,left:m*60,endAt:Date.now()+m*60000,running:true,stepIdx:cook.step};unlockAudio();startTick();go("timer");};
-A.showTimer=()=>go("timer");
+A.showTimer=()=>{unlockAudio();go("timer");};
 A.hideTimer=()=>back();
-A.toggleTimer=()=>{const t=cook.timer;if(t.running){t.left=timerLeft();t.running=false;}else{t.endAt=Date.now()+t.left*1000;t.running=true;}render();};
-A.plus5=()=>{const t=cook.timer;if(t.running)t.endAt+=300000;else t.left+=300;t.total+=300;render();};
+A.toggleTimer=()=>{unlockAudio();const t=cook.timer;if(t.running){t.left=timerLeft();t.running=false;}else{t.endAt=Date.now()+t.left*1000;t.running=true;}render();};
+A.plus5=()=>{unlockAudio();const t=cook.timer;if(t.running)t.endAt+=300000;else t.left+=300;t.total+=300;render();};
 A.plus5done=()=>{stopAlarm();cook.timer={total:300,left:300,endAt:Date.now()+300000,running:true,stepIdx:cook.timerDoneStep};startTick();stack=stack.filter(x=>x.n!=="timerdone");stack.push({n:"timer"});render();};
 A.ackTimer=()=>{stopAlarm();cook.step=cook.timerDoneStep;stack=stack.filter(x=>x.n!=="timer"&&x.n!=="timerdone");scrollTo(0,0);render();};
 A.ackNext=()=>{stopAlarm();cook.step=cook.timerDoneStep+1;stack=stack.filter(x=>x.n!=="timer"&&x.n!=="timerdone");scrollTo(0,0);render();};
-let actx=null,alarm=null;
-function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume();}catch(e){}}
+// ---- timer alarm ----
+// iPhone keeps Web Audio quiet in silent mode and ignores vibration, so the alarm is a looping
+// <audio> clip (a generated beep-beep-beep) with the audio session set to "playback", which
+// plays even with the ringer off. It is unlocked on the tap that starts the timer and keeps
+// ringing until you act on it (up to 2 minutes). Web Audio beeps are the fallback.
+let actx=null,alarmEl=null,alarmUrl=null,alarmStop=null,beepT=null,titleT=null;
+function alarmWav(){
+  if(alarmUrl)return alarmUrl;
+  const sr=22050,n=Math.floor(sr*1.6),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i));};
+  w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){const t=i/sr;let a=0;for(const st of [0,.25,.5]){const u=t-st;if(u>=0&&u<.18){const env=Math.min(1,u/.01)*Math.min(1,(.18-u)/.04);a+=env*(Math.sin(2*Math.PI*880*u)*.75+Math.sin(2*Math.PI*1760*u)*.15);}}
+    v.setInt16(44+i*2,Math.max(-1,Math.min(1,a))*30000,true);}
+  alarmUrl=URL.createObjectURL(new Blob([buf],{type:"audio/wav"}));return alarmUrl;
+}
+function playbackSession(){try{if(navigator.audioSession)navigator.audioSession.type="playback";}catch(e){}}
+function unlockAudio(){
+  playbackSession();
+  try{
+    if(!alarmEl){alarmEl=new Audio(alarmWav());alarmEl.loop=true;alarmEl.preload="auto";alarmEl.setAttribute("playsinline","");}
+    if(alarmEl.paused){alarmEl.muted=true;const p=alarmEl.play();if(p)p.then(()=>{if(!beepT&&!alarmStop){alarmEl.pause();alarmEl.currentTime=0;}alarmEl.muted=false;}).catch(()=>{alarmEl.muted=false;});}
+  }catch(e){}
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume();}catch(e){}
+}
 function beep(){if(!actx)return;try{const t=actx.currentTime;[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(0.0001,t+d);g.gain.exponentialRampToValueAtTime(0.3,t+d+.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.18);o.start(t+d);o.stop(t+d+.2);});}catch(e){}}
-function ring(){beep();try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(e){}let n=0;stopAlarm();alarm=setInterval(()=>{beep();if(++n>=8)stopAlarm();},1600);}
-function stopAlarm(){clearInterval(alarm);alarm=null;}
+function flashTitle(on){clearInterval(titleT);titleT=null;document.title="Recetario";if(on){let k=0;titleT=setInterval(()=>{document.title=(k++%2)?"Recetario":"⏰ ¡Listo el timer!";},1000);}}
+function ring(){
+  stopAlarm();playbackSession();
+  let ok=false;
+  try{if(alarmEl){alarmEl.muted=false;alarmEl.currentTime=0;const p=alarmEl.play();ok=true;if(p)p.catch(()=>{if(!beepT){beep();beepT=setInterval(beep,1600);}});}}catch(e){}
+  if(!ok){beep();beepT=setInterval(beep,1600);}
+  try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400]);}catch(e){}
+  flashTitle(true);
+  alarmStop=setTimeout(stopAlarm,120000);
+}
+function stopAlarm(){clearInterval(beepT);beepT=null;clearTimeout(alarmStop);alarmStop=null;try{if(alarmEl){alarmEl.pause();alarmEl.currentTime=0;}}catch(e){}flashTitle(false);}
 
 /* ================= events ================= */
 document.addEventListener("click",e=>{
@@ -682,7 +715,7 @@ document.addEventListener("keydown",e=>{
   if(draft&&(b.startsWith("in.")||b.startsWith("iq."))){e.preventDefault();const i=+b.split(".")[1];if(i===draft.ings.length-1)A.addIng();else{const n=app.querySelector(`[data-bind="iq.${i+1}"]`);n&&n.focus();}}
 });
 
-if(DEMO)window.__demo={go,reset,setCook:o=>{cook=Object.assign(cook||{checked:new Set()},o);},setCsv:o=>{csv=o;}};
+if(DEMO)window.__demo={startTick,unlockAudio,alarmState:()=>({el:!!alarmEl,paused:alarmEl?alarmEl.paused:null,title:document.title}),go,reset,setCook:o=>{cook=Object.assign(cook||{checked:new Set()},o);},setCsv:o=>{csv=o;}};
 render();
 initStore();
 })();
