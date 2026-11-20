@@ -7,6 +7,8 @@ const FB_CFG={
   messagingSenderId:"979672181967",
   appId:"1:979672181967:web:86bbbb84c5698736981bba"
 };
+const DEMO=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&/[?&]demo\b/.test(location.search);
+function demoSave(){try{localStorage.setItem("recetario.demo",JSON.stringify({recipes:S.recipes,state:S.state,favs:[...S.favs],profile:S.profile}))}catch(e){}}
 const FBU="https://www.gstatic.com/firebasejs/11.10.0/";
 const S={recipes:[],state:{},favs:new Set(),user:null,profile:null,ready:false,slow:false,fail:false};
 let F=null,unsubs=[];
@@ -34,14 +36,17 @@ async function putRecipe(r){
   const i=S.recipes.findIndex(x=>x.id===r.id);
   if(i>=0)S.recipes[i]=r;else S.recipes.unshift(r);
   render();
+  if(DEMO){demoSave();return true}
   const data=clone(r);delete data.fav;
   try{await serial(r.id,()=>F.fs.setDoc(recRef(r.id),data));return true}catch(e){onWriteErr(e);return false}
 }
 async function delRecipe(id){
   S.recipes=S.recipes.filter(x=>x.id!==id);render();
+  if(DEMO){demoSave();return}
   try{await serial(id,()=>F.fs.deleteDoc(recRef(id)))}catch(e){onWriteErr(e)}
 }
 async function saveUser(patch){
+  if(DEMO){demoSave();return}
   try{await serial("_user",()=>F.fs.setDoc(userRef(),patch,{merge:true}))}catch(e){onWriteErr(e)}
 }
 async function setState(patch){
@@ -56,6 +61,11 @@ async function toggleFav(id){
   return on;
 }
 async function initStore(){
+  if(DEMO){
+    let d={};try{d=JSON.parse(localStorage.getItem("recetario.demo")||"{}")}catch(e){}
+    S.user={uid:"demo",email:"vos@email.com",displayName:"Tomás"};S.profile=d.profile||{name:"Tomás"};
+    S.recipes=d.recipes||[];S.state=d.state||{};S.favs=new Set(d.favs||[]);S.ready=true;stack=[{n:"home"}];render();return;
+  }
   try{
     const [app,au,fs]=await Promise.all([import(FBU+"firebase-app.js"),import(FBU+"firebase-auth.js"),import(FBU+"firebase-firestore.js")]);
     const a=app.initializeApp(FB_CFG);

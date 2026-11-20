@@ -32,6 +32,10 @@ App web solo para celular (en compu se bloquea) para guardar recetas propias y c
 - Se pueden importar recetas desde un archivo CSV.
 - Las fotos se achican a 900 px antes de guardarse.
 
+## Probar sin cuenta
+
+Con un servidor local (`python3 -m http.server -d public`), abrí `http://localhost:8000/?demo`: entra como "Tomás" sin Firebase y guarda todo en el navegador. Desde la consola, `__demo.go('pantalla')` lleva a cualquier pantalla. Solo funciona en localhost.
+
 ## Diseño (Figma "Cooking", página Pantallas)
 
 - **Tipografía:** Instrument Sans, solo Regular y Medium.

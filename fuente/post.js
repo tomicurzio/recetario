@@ -173,7 +173,7 @@ const FIELDS=[["name","nombre"],["time","tiempo"],["servings","porciones"],["cat
 let csv=null;
 V.csv=()=>`<div class="screen">${nav(ibtn("home","caret-left","Volver"))}<div class="body">
   <h1 class="d-m">Importar un CSV</h1>
-  <button class="drop" data-act="chooseCsv">${ic("upload-simple",24)}<span class="bl-m">Elegí un archivo CSV</span><span class="cap c2">Desde Archivos, iCloud o Drive</span></button>
+  <button class="drop" data-act="chooseCsv"><span class="oi">${ic("upload-simple",22)}</span><span class="bl-m">Elegí un archivo CSV</span><span class="cap c2">Desde Archivos, iCloud o Drive</span></button>
   ${csv&&csv.err?`<div class="notice danger">${ic("warning-circle",18)}<span>${esc(csv.err)}</span></div>`:""}
   <div class="col g12"><span class="lbl c2">Columnas que buscamos</span><div class="chips">${["nombre","tiempo","porciones","ingredientes","pasos"].map(c=>`<span class="chip">${c}</span>`).join("")}</div></div>
   <button class="addrow bm-m" data-act="template">Descargar plantilla</button>
@@ -197,10 +197,11 @@ V.csvpick=()=>{
   ${dups.length?`<div class="notice danger">${ic("warning-circle",18)}<span>${dups.length===1?esc(dups[0].r.name)+" ya está en tus recetas":dups.length+" recetas ya están en tus recetas"}</span></div>`:""}
   </div><div class="foot"><button class="btn pri wide" data-act="csvImport" ${n?"":"disabled"}>Importar ${n} ${n===1?"receta":"recetas"}</button></div></div>`;
 };
-V.csvdone=(p)=>`<div class="screen">${nav()}<div class="center" style="gap:24px"><div class="bigcircle" style="background:var(--accent-soft)"><div class="bigcircle" style="width:96px;height:96px;background:var(--accent);color:#fff">${ic("check",40)}</div></div>
+V.csvdone=(p)=>`<div class="screen">${nav()}<div class="center" style="gap:24px">${badge("azul")}
   <div class="col g12"><h1 class="d-m">${p.count} ${p.count===1?"receta nueva":"recetas nuevas"}</h1><p class="bm c2">${p.skipped?esc(p.skipped)+" se salteó porque ya la tenés. ":""}Las nuevas están primero en tus recetas.</p></div></div>
   <div class="foot"><button class="btn pri wide" data-act="home">Ver mis recetas</button><button class="btn txt wide" data-act="addCsv">Importar otro archivo</button></div></div>`;
 
+const badge=k=>`<img class="badge" src="img/check-${k}.png" width="180" height="180" alt="" draggable="false">`;
 /* ----- cooking ----- */
 let cook=null;
 let wake=null;
@@ -243,7 +244,7 @@ V.timer=()=>{
 };
 V.timerdone=()=>{
   const r=getR(cook.id),i=cook.timerDoneStep,last=i>=r.steps.length-1;
-  return`<div class="screen green">${nav()}<div class="center" style="gap:24px"><div class="bigcircle" style="background:rgba(255,255,255,.12)"><div class="bigcircle" style="width:96px;height:96px;background:#fff;color:var(--accent)">${ic("check",40)}</div></div>
+  return`<div class="screen green">${nav()}<div class="center" style="gap:24px">${badge("blanco")}
   <div class="col g12"><h1 class="d-m">¡Listo el timer!</h1><p class="bm" style="color:var(--on-accent-2)">Terminó el tiempo del paso ${i+1}.${last?"":" Seguimos con el paso "+(i+2)+"."}</p></div></div>
   <div class="foot"><button class="btn lightglass wide" data-act="${last?"ackTimer":"ackNext"}">${last?"Volver al paso":"Siguiente paso"+arrowR}</button><button class="btn darkglass wide" data-act="plus5done">+5 min</button></div></div>`;
 };
@@ -266,7 +267,7 @@ V.email=(p)=>{
   <div class="field"><label class="lbl c2" for="f-email">Email</label><input class="input" id="f-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" data-bind="email" value="${esc(v)}" placeholder="vos@email.com" autofocus></div>
   </div><div class="foot"><button class="btn pri wide" data-act="${p.confirm?"confirmEmail":"sendLink"}" ${p.busy?"disabled":""}>${p.confirm?"Entrar":"Mandame el link"}</button>${p.confirm?`<button class="btn txt wide" data-act="cancelLink">Usar otra cuenta</button>`:""}</div></div>`;
 };
-V.sent=(p)=>`<div class="screen">${nav(ibtn("back","caret-left","Volver"))}<div class="center" style="gap:24px"><div class="bigcircle" style="width:136px;height:136px;background:var(--accent);color:#fff">${ic("check",56)}</div>
+V.sent=(p)=>`<div class="screen">${nav()}<div class="center" style="gap:24px">${badge("azul")}
   <div class="col g8"><h1 class="d-m">Revisá tu mail</h1><p class="bm c2">Te mandamos un link a ${esc(p.email)}. Abrilo desde este teléfono.</p></div></div>
   <div class="foot"><button class="btn txt wide" data-act="resend">Mandarlo de nuevo</button></div></div>`;
 V.name=(p)=>{
@@ -378,6 +379,7 @@ async function renameEverywhere(name){
   await saveUser({name});
   const mine=S.recipes.filter(r=>isMine(r)&&r.ownerName!==name);
   if(!mine.length)return;
+  if(DEMO){mine.forEach(r=>r.ownerName=name);demoSave();return}
   try{const b=F.fs.writeBatch(F.db);mine.slice(0,450).forEach(r=>b.update(recRef(r.id),{ownerName:name}));await b.commit();}catch(e){}
 }
 A.saveName=async()=>{
@@ -391,7 +393,7 @@ async function savePname(){
   const name=c.pname.trim();if(!name||name===myName())return;
   await renameEverywhere(name);toast("Nombre guardado");render();
 }
-A.logout=async()=>{closeSheet();cook=null;lockOff();try{await F.au.signOut(F.auth)}catch(e){toast("No pudimos cerrar la sesión");}};
+A.logout=async()=>{closeSheet();cook=null;lockOff();if(DEMO){S.user=null;stack=[{n:"welcome"}];render();return}try{await F.au.signOut(F.auth)}catch(e){toast("No pudimos cerrar la sesión");}};
 
 /* drafts */
 A.addManual=()=>{closeSheet();draft=blank();go("manual",{s:1});};
@@ -575,6 +577,7 @@ document.addEventListener("keydown",e=>{
   if(draft&&(b.startsWith("in.")||b.startsWith("iq."))){e.preventDefault();const i=+b.split(".")[1];if(i===draft.ings.length-1)A.addIng();else{const n=app.querySelector(`[data-bind="iq.${i+1}"]`);n&&n.focus();}}
 });
 
+if(DEMO)window.__demo={go,reset,setCook:o=>{cook=Object.assign(cook||{checked:new Set()},o);},setCsv:o=>{csv=o;}};
 render();
 initStore();
 })();
