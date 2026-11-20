@@ -325,19 +325,17 @@ function fitCount(force){
   num.style.fontSize=(w>max?Math.floor(150*max/w*0.97):150)+"px";
 }
 window.addEventListener("resize",()=>fitCount(true));
-// Safari paints the area above the page (status bar) with theme-color / the page background:
-// blue on screens that start with a blue cover, the page color everywhere else.
+// Safari colors its status-bar area from the page background (and theme-color in older versions).
+// Screens that open with a blue cover get a blue page background; the rest keep the cream one.
 let lastTint="";
 function tint(){
-  const c=cur(),bar=document.getElementById("cbar");
-  const blue=S.ready&&!S.fail&&(c.n==="welcome"||c.n==="timer"||c.n==="timerdone"||(c.n==="detail"&&!(bar&&bar.classList.contains("on"))));
-  const col=blue?"#3A5171":(getComputedStyle(document.body).backgroundColor||"#F7F6F3");
-  if(col===lastTint)return;lastTint=col;
-  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",col);
-  document.documentElement.style.backgroundColor=col;
-  // Safari 26 also samples fixed elements touching the top edge
-  let t=document.getElementById("topTint");if(!t){t=document.createElement("div");t.id="topTint";t.setAttribute("aria-hidden","true");document.body.appendChild(t);}
-  t.style.background=col;
+  const c=cur();
+  const blue=S.ready&&!S.fail&&(c.n==="welcome"||c.n==="timer"||c.n==="timerdone");
+  const key=blue?"blue":"page";
+  if(key===lastTint)return;lastTint=key;
+  document.body.style.backgroundColor=blue?"#3A5171":"";
+  document.documentElement.style.backgroundColor=blue?"#3A5171":"";
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",blue?"#3A5171":getComputedStyle(document.body).backgroundColor);
 }
 function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
