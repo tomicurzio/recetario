@@ -57,7 +57,7 @@ async function setState(patch){
 async function toggleFav(id){
   const on=!S.favs.has(id);
   on?S.favs.add(id):S.favs.delete(id);render();
-  await saveUser({favs:on?F.fs.arrayUnion(id):F.fs.arrayRemove(id)});
+  await saveUser(DEMO?{}:{favs:on?F.fs.arrayUnion(id):F.fs.arrayRemove(id)});
   return on;
 }
 async function initStore(){

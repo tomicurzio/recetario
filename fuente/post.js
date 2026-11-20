@@ -22,11 +22,11 @@ function fmtDate(ts){try{return new Date(ts).toLocaleDateString("es-AR",{day:"nu
 
 /* ================= toasts ================= */
 let toastT=null,toastAct=null;
-function toast(msg,actLabel,actFn,ms){
+function toast(msg,actLabel,actFn,ms,top){
   const el=document.getElementById("toasts");
-  toastAct=actFn||null;
+  toastAct=actFn||null;el.classList.toggle("top",!!top);
   el.innerHTML=`<div class="toast"><span class="lbl">${esc(msg)}</span>${actLabel?`<button data-act="toastAct">${esc(actLabel)}</button>`:""}</div>`;
-  clearTimeout(toastT);toastT=setTimeout(()=>{el.innerHTML="";toastAct=null},ms||(actLabel?5000:2400));
+  clearTimeout(toastT);toastT=setTimeout(()=>{const t=el.firstChild;if(top&&t){t.classList.add("out");toastT=setTimeout(()=>{el.innerHTML="";toastAct=null},220);}else{el.innerHTML="";toastAct=null}},ms||(actLabel?5000:2400));
 }
 
 /* ================= sheets ================= */
@@ -106,7 +106,7 @@ V.loading=()=>`<div class="screen"><div class="center"><div class="spin"></div><
 /* ----- home ----- */
 const firstName=n=>String(n||"").trim().split(/\s+/)[0]||"";
 const cardHtml=(r,other)=>{const t=r.time?fmtTime(r.time):((r.steps||[]).length===1?"1 paso":(r.steps||[]).length+" pasos");const sub=other&&r.ownerName?firstName(r.ownerName)+" · "+t:t;
-  return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)&&fullPhoto(r)?`<span class="fav">${ic("heart-fill",18)}</span>`:isFav(r)?`<span class="fav" style="color:var(--accent-ink);filter:none">${ic("heart-fill",18)}</span>`:""}</button>`;};
+  return`<button class="rc" data-act="open" data-id="${r.id}"><div class="tile">${pic(r)}</div><div class="tx"><span class="bm-m nm">${esc(r.name)}</span><span class="cap c2">${esc(sub)}</span></div>${isFav(r)?`<span class="ib fav">${ic("heart-fill",18)}</span>`:""}</button>`;};
 const addCard=`<button class="rc addc" data-act="openAdd"><img src="img/mas.png" width="60" height="60" alt="" draggable="false"><span class="bm-m">Subí tu primera receta</span></button>`;
 const fakeCard=(n,t,k,cls)=>`<div class="rc ${cls}" aria-hidden="true"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`;
 const deck=`<div class="deck" aria-hidden="true">${fakeCard("Tarta de limón","45 min","tarta","dk l")}${fakeCard("Sopa de tomate","30 min","sopa","dk r")}<div class="dfront"><div class="tile"><span class="dic">${ic("pencil-simple",24)}</span></div><div class="tx"><span class="bm-m">Tu primera receta</span><span class="cap" style="color:var(--ph)">¿Cuánto tarda?</span></div></div></div>`;
@@ -410,7 +410,7 @@ A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=d
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
 A.open=(el)=>{closeSheet();go("detail",{id:el.dataset.id});};
 A.sv=(el)=>{const c=cur();const r=getR(c.id);c.sv=Math.max(1,Math.min(99,(c.sv||r.servings)+ +el.dataset.d));keepScroll(()=>{});};
-A.fav=async()=>{const on=await toggleFav(cur().id);toast(on?"Guardada en favoritas":"Sacada de favoritas");};
+A.fav=async()=>{const on=await toggleFav(cur().id);toast(on?"Guardada en favoritas":"Sacada de favoritas",0,0,0,true);};
 A.menu=()=>openSheet({t:"menu",id:cur().id});
 A.edit=()=>{closeSheet();if(!isMine(getR(cur().id)))return;draft=toDraft(getR(cur().id));go("edit");};
 A.saveEdit=async()=>{if(!draft.name.trim()){const i=document.getElementById("f-name");i&&i.focus();return;}const r=fromDraft(draft);if(await putRecipe(r)){draft=null;back();toast("Cambios guardados");}};
