@@ -58,10 +58,10 @@ function renderSheet(){
     h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">Timer en el Reloj</h2><p class="bm c2">Los timers se ponen en el Reloj del iPhone, así suenan aunque cierres Safari. Necesitás un atajo; se crea una sola vez:</p>
     <ol class="bm c2" style="margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
       <li>Abrí <b class="bm-m" style="color:var(--ink)">Atajos</b> y tocá <b class="bm-m" style="color:var(--ink)">+</b>.</li>
-      <li>Agregá la acción <b class="bm-m" style="color:var(--ink)">Iniciar temporizador</b>.</li>
-      <li>Tocá el número del tiempo y elegí la variable <b class="bm-m" style="color:var(--ink)">Portapapeles</b> (en la barra arriba del teclado o en «Seleccionar variable»). Dejá «minutos».</li>
+      <li>Agregá la acción <b class="bm-m" style="color:var(--ink)">Obtener números de la entrada</b>. Tiene que decir «Entrada del atajo»; si no, tocá el campo azul y elegila.</li>
+      <li>Agregá debajo <b class="bm-m" style="color:var(--ink)">Iniciar temporizador</b>, tocá el tiempo y elegí la variable <b class="bm-m" style="color:var(--ink)">Números</b>. Dejá «minutos».</li>
       <li>Arriba, cambiale el nombre a <b class="bm-m" style="color:var(--ink)">Timer de Recetario</b> y tocá Listo.</li>
-    </ol><p class="cap c2" style="margin-top:4px">La app copia los minutos antes de abrir el atajo. La primera vez, si iPhone pregunta si el atajo puede pegar, elegí «Permitir».</p></div>
+    </ol><p class="cap c2" style="margin-top:4px">La app le manda los minutos como texto; la primera acción los convierte en número para el temporizador.</p></div>
     <div class="col g8"><a class="btn pri wide" href="shortcuts://">Abrir Atajos</a><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">Ya lo creé</button><button class="btn txt wide" data-act="closeSheet">Cancelar</button></div>`;
   }else if(t==="steps"){
     const r=getR(cook.id);
