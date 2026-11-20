@@ -389,6 +389,19 @@ A.dismissResume=()=>{const p=S.state.progress;if(!p)return;keepScroll(()=>{setSt
 // Clock timer via the "Timer de Recetario" shortcut. Once it is in the Clock, the app's own
 // timer for that step stops (the app can't pause or extend a Clock timer, so there is one timer,
 // not two); the step shows when it ends and you pause or extend it from the Clock.
+const LS_COOK="recetario.cocinando";
+function saveCookSnap(){try{if(cook)localStorage.setItem(LS_COOK,JSON.stringify({id:cook.id,step:cook.step,sv:cook.sv,clock:cook.clock||null,at:Date.now()}));}catch(e){}}
+function restoreCook(){
+  const back=/#volver/.test(location.hash);
+  if(back)history.replaceState(null,"",location.pathname+location.search);
+  if(!back||cook)return;
+  let snap=null;try{snap=JSON.parse(localStorage.getItem(LS_COOK)||"null");}catch(e){}
+  if(!snap||Date.now()-snap.at>6*3600000)return;
+  const r=getR(snap.id);if(!r||!(r.steps||[]).length)return;
+  cook={id:r.id,step:Math.min(snap.step,r.steps.length-1),sv:snap.sv||r.servings,checked:new Set(),timer:null,clock:snap.clock};
+  lockOn();stack=[{n:"home"},{n:"detail",id:r.id},{n:"step"}];
+}
+window.addEventListener("hashchange",()=>{if(/#volver/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);});
 const LS_ATAJO="recetario.atajo3",ATAJO="Timer de Recetario";
 function runClock(m){
   if(cook){const idx=cook.timer?cook.timer.stepIdx:cook.step;
@@ -398,7 +411,11 @@ function runClock(m){
     render();}
   // the minutes go both as the shortcut's input and to the clipboard; the shortcut reads the
   // clipboard (iPhone often drops URL input when the shortcut isn't set to receive it)
-  const url="shortcuts://run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text="+encodeURIComponent(String(m));
+  // x-success brings you back to the recipe when the shortcut finishes; the cooking step is
+  // saved first so it comes back even if Safari reloads the page
+  saveCookSnap();
+  const back=location.origin+location.pathname+location.search+"#volver";
+  const url="shortcuts://x-callback-url/run-shortcut?name="+encodeURIComponent(ATAJO)+"&input=text&text="+encodeURIComponent(String(m))+"&x-success="+encodeURIComponent(back)+"&x-cancel="+encodeURIComponent(back)+"&x-error="+encodeURIComponent(back);
   const go=()=>{location.href=url;};
   try{navigator.clipboard.writeText(String(m)).then(go,go);}catch(e){go();}
 }

@@ -64,7 +64,7 @@ async function initStore(){
   if(DEMO){
     let d={};try{d=JSON.parse(localStorage.getItem("recetario.demo")||"{}")}catch(e){}
     S.user={uid:"demo",email:"vos@email.com",displayName:"Tomás"};S.profile=d.profile||{name:"Tomás"};
-    S.recipes=d.recipes||[];S.state=d.state||{};S.favs=new Set(d.favs||[]);S.ready=true;stack=[{n:"home"}];render();return;
+    S.recipes=d.recipes||[];S.state=d.state||{};S.favs=new Set(d.favs||[]);S.ready=true;stack=[{n:"home"}];restoreCook();render();return;
   }
   try{
     const [app,au,fs]=await Promise.all([import(FBU+"firebase-app.js"),import(FBU+"firebase-auth.js"),import(FBU+"firebase-firestore.js")]);
@@ -103,7 +103,7 @@ function onUser(u){
   S.ready=false;render();
   let gotUser=false,gotRecs=false;
   const done=()=>{if(!(gotUser&&gotRecs)||S.ready)return;S.ready=true;
-    stack=[{n:"home"}];if(!S.profile.name)stack=[{n:"name"}];scrollTo(0,0);render();};
+    stack=[{n:"home"}];if(!S.profile.name)stack=[{n:"name"}];else restoreCook();scrollTo(0,0);render();};
   const timer=setTimeout(()=>{if(!S.ready){S.slow=true;gotUser=gotRecs=true;S.profile=S.profile||{};done();}},10000);
   unsubs.push(F.fs.onSnapshot(userRef(),snap=>{
     S.profile=snap.exists()?snap.data():{};
