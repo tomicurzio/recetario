@@ -448,10 +448,10 @@ A.saveCopy=async()=>{closeSheet();const r=fromDraft(draft);r.name=r.name+" (copi
 const photoIn=document.getElementById("photoIn");
 A.pickPhoto=()=>{closeSheet();photoIn.value="";photoIn.click();};
 A.photoMenu=()=>openSheet({t:"photo"});
-A.rmPhoto=()=>{closeSheet();delete draft.photo;delete draft.photoCutout;keepScroll(()=>{});};
+A.rmPhoto=()=>{closeSheet();delete draft.photo;delete draft.photoCutout;delete draft.photoTrim;keepScroll(()=>{});};
 photoIn.addEventListener("change",async()=>{
   const f=photoIn.files&&photoIn.files[0];if(!f||!draft)return;
-  try{const x=await shrink(f,900,.8);draft.photo=x.data;if(x.cut)draft.photoCutout=true;else delete draft.photoCutout;keepScroll(()=>{});}catch(e){toast("No pudimos abrir esa foto");}
+  try{const x=await shrink(f,900,.8);draft.photo=x.data;if(x.cut){draft.photoCutout=true;draft.photoTrim=true;}else{delete draft.photoCutout;delete draft.photoTrim;}keepScroll(()=>{});}catch(e){toast("No pudimos abrir esa foto");}
 });
 // Removes a plain light background (white or the old beige fill) that touches the edges.
 // iPhone turns gallery images into JPEG on upload, so a cut-out plate arrives with a white
@@ -475,9 +475,23 @@ function whiteCut(c){
 // Draws an image scaled to fit `m` px on a transparent canvas.
 function drawFit(im,m,bg){let w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;const k=Math.min(1,m/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
   const c=document.createElement("canvas");c.width=w;c.height=h;const cx=c.getContext("2d");if(bg){cx.fillStyle=bg;cx.fillRect(0,0,w,h);}cx.drawImage(im,0,0,w,h);return c;}
-// PNG with transparency, shrunk until it fits in the recipe document (~230 KB).
+// Crops a transparent canvas to the dish, leaving a small margin, so it fills the cover like the drawings.
+function trimCanvas(c){
+  const w=c.width,h=c.height,d=c.getContext("2d").getImageData(0,0,w,h).data;
+  let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>12){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<0)return c;
+  const pad=Math.round(Math.max(x1-x0,y1-y0)*0.03);
+  x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(w-1,x1+pad);y1=Math.min(h-1,y1+pad);
+  const o=document.createElement("canvas");o.width=x1-x0+1;o.height=y1-y0+1;o.getContext("2d").drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);return o;
+}
+function fitCanvas(c,m){const k=Math.min(1,m/Math.max(c.width,c.height));if(k===1)return c;const o=document.createElement("canvas");o.width=Math.max(1,Math.round(c.width*k));o.height=Math.max(1,Math.round(c.height*k));o.getContext("2d").drawImage(c,0,0,o.width,o.height);return o;}
+// PNG with transparency, cropped to the dish and shrunk until it fits in the recipe document (~230 KB).
 function cutPng(im,max,needsWhiteCut){
-  for(const m of [max,720,560,440,340,260]){const c=drawFit(im,m,null);if(needsWhiteCut&&!whiteCut(c))return null;const out=c.toDataURL("image/png");if(out.length<=230000||m===260)return out;}
+  const big=drawFit(im,1600,null);
+  if(needsWhiteCut&&!whiteCut(big))return null;
+  const t=trimCanvas(big);
+  for(const m of [max,720,560,440,340,260]){const out=fitCanvas(t,m).toDataURL("image/png");if(out.length<=230000||m===260)return out;}
   return null;
 }
 // Shrinks a photo before saving. Cut-out photos (transparent, or on a plain white background)
@@ -503,14 +517,17 @@ function shrink(file,max,q){
 // background once and save it. Checked recipes are marked so this runs only once each.
 const fixing=new Set();
 function fixOldPhoto(r){
-  if(!r||!isMine(r)||!r.photo||r.photoCutout||r.photoChecked||fixing.has(r.id))return;
-  if(!/^data:image\/jpeg/.test(r.photo))return;
+  if(!r||!isMine(r)||!r.photo||fixing.has(r.id))return;
+  const jpeg=/^data:image\/jpeg/.test(r.photo);
+  const needCut=jpeg&&!r.photoCutout&&!r.photoChecked;
+  const needTrim=r.photoCutout&&!r.photoTrim;
+  if(!needCut&&!needTrim)return;
   fixing.add(r.id);
   const im=new Image();
   im.onload=async()=>{
-    let out=null;try{if(whiteCut(drawFit(im,200,null)))out=cutPng(im,900,true);}catch(e){}
+    let out=null;try{out=needCut?cutPng(im,900,true):cutPng(im,900,false);}catch(e){}
     const r2=clone(getR(r.id)||r);
-    if(out){r2.photo=out;r2.photoCutout=true;}else r2.photoChecked=true;
+    if(out){r2.photo=out;r2.photoCutout=true;r2.photoTrim=true;}else r2.photoChecked=true;
     await putRecipe(r2);
   };
   im.onerror=()=>{};im.src=r.photo;
