@@ -69,7 +69,7 @@ function toDraft(r){
   d.steps=(r.steps||[]).slice();if(!d.steps.length)d.steps=[""];
   delete d.ingredients;return d;
 }
-function blank(){return toDraft({id:newId(),name:"",time:0,servings:4,category:"",ingredients:[],steps:[],fav:false,createdAt:Date.now()});}
+function blank(){return toDraft({id:newId(),name:"",time:0,servings:4,ingredients:[],steps:[],fav:false,createdAt:Date.now()});}
 function fromDraft(d){
   const r=clone(d);
   r.name=(r.name||"").trim()||"Receta sin nombre";
@@ -158,7 +158,6 @@ function photoTile(d){
 }
 const fTime=d=>`<div class="field"><label class="lbl c2" for="f-time">Tiempo</label><input class="input" id="f-time" data-bind="time" value="${esc(d.time)}" placeholder="ej. 45 min" autocomplete="off"></div>`;
 const fServ=d=>`<div class="between"><span class="lbl c2">Porciones</span>${stepper("dsv",d.servings)}</div>`;
-const fCat=d=>`<div class="field" style="gap:12px"><span class="lbl c2">Categoría</span><div class="chips">${CATS.map(c=>`<button class="chip ${d.category===c?"on":""}" data-act="cat" data-c="${c}">${d.category===c?ic("check",14):""}${c}</button>`).join("")}</div></div>`;
 const fName=(d,auto)=>`<input class="bare d-m" id="f-name" data-bind="name" value="${esc(d.name)}" placeholder="Nombre" autocomplete="off" ${auto?"autofocus":""}>`;
 function fIngs(d){
   return`<div class="col g8">${d.ings.map((x,i)=>`<div class="ecard"><input class="bare bm-m q" data-bind="iq.${i}" value="${esc(x.q)}" placeholder="800 g" autocomplete="off"><input class="bare bm" data-bind="in.${i}" value="${esc(x.n)}" placeholder="Ingrediente" autocomplete="off"><button class="x" data-act="rmIng" data-i="${i}" aria-label="Quitar">${ic("x",16)}</button></div>`).join("")}</div>
@@ -171,7 +170,7 @@ function fSteps(d){
 V.manual=(p)=>{
   const s=p.s||1,d=draft;
   let h=`<div class="screen">${nav(ibtn(s===1?"cancelDraft":"wprev","caret-left","Volver"),`<span class="lbl c2">${s} de 3</span>`,"")}<div class="body"><div class="prog">${[1,2,3].map(i=>`<i class="${i<=s?"on":""}"></i>`).join("")}</div>`;
-  if(s===1)h+=fName(d,!d.name)+photoTile(d)+fTime(d)+fServ(d)+fCat(d);
+  if(s===1)h+=fName(d,!d.name)+photoTile(d)+fTime(d)+fServ(d);
   if(s===2)h+=`<h1 class="d-m">¿Qué lleva?</h1><div class="col g8">${fIngs(d)}</div>`;
   if(s===3)h+=`<h1 class="d-m">¿Cómo se hace?</h1><div class="col g8">${fSteps(d)}</div>`;
   h+=`</div><div class="foot">${s===1?`<button class="btn pri wide" data-act="wnext">Siguiente: ingredientes${arrowR}</button>`:s===2?`<button class="btn pri wide" data-act="wnext">Siguiente: pasos${arrowR}</button>`:`<button class="btn pri wide" data-act="saveDraft">Guardar receta</button>`}</div></div>`;
@@ -179,13 +178,13 @@ V.manual=(p)=>{
 };
 V.edit=()=>{
   const d=draft;
-  return`<div class="screen">${nav(ibtn("back","x","Cerrar"),"",`<button class="btn pri sm" data-act="saveEdit">Guardar</button>`)}<div class="body">${fName(d)}${photoTile(d)}${fTime(d)}${fServ(d)}${fCat(d)}
+  return`<div class="screen">${nav(ibtn("back","x","Cerrar"),"",`<button class="btn pri sm" data-act="saveEdit">Guardar</button>`)}<div class="body">${fName(d)}${photoTile(d)}${fTime(d)}${fServ(d)}
   <div class="col g12"><h2 class="hl">Ingredientes</h2><div class="col g8">${fIngs(d)}</div></div>
   <div class="col g12"><h2 class="hl">Pasos</h2><div class="col g8">${fSteps(d)}</div></div></div></div>`;
 };
 
 /* ----- csv ----- */
-const FIELDS=[["name","nombre"],["time","tiempo"],["servings","porciones"],["category","categoría"],["ingredients","ingredientes"],["steps","pasos"],["skip","omitir"]];
+const FIELDS=[["name","nombre"],["time","tiempo"],["servings","porciones"],["ingredients","ingredientes"],["steps","pasos"],["skip","omitir"]];
 let csv=null;
 V.csv=()=>`<div class="screen">${nav(ibtn("home","caret-left","Volver"))}<div class="body">
   <h1 class="d-m">Importar un CSV</h1>
@@ -423,7 +422,6 @@ A.logout=async()=>{closeSheet();cook=null;lockOff();if(DEMO){S.user=null;stack=[
 /* drafts */
 A.addManual=()=>{closeSheet();draft=blank();go("manual",{s:1});};
 A.cancelDraft=()=>{draft=null;reset();};
-A.cat=(el)=>{draft.category=draft.category===el.dataset.c?"":el.dataset.c;keepScroll(()=>{});};
 A.dsv=(el)=>{draft.servings=Math.max(1,Math.min(99,(+draft.servings||1)+ +el.dataset.d));const s=el.parentNode.querySelector("[data-sv]");s&&(s.textContent=draft.servings);};
 A.addIng=()=>{draft.ings.push({q:"",n:""});keepScroll(()=>{});const q=app.querySelectorAll('[data-bind^="iq."]');q[q.length-1]&&q[q.length-1].focus();};
 A.rmIng=(el)=>{draft.ings.splice(+el.dataset.i,1);if(!draft.ings.length)draft.ings.push({q:"",n:""});keepScroll(()=>{});};
@@ -485,7 +483,6 @@ function guessField(h){const n=norm(h);
   if(/^(nombre|titulo|receta|name|title)/.test(n))return"name";
   if(/(tiempo|minutos|duracion|time)/.test(n))return"time";
   if(/(porcion|personas|servings|raciones)/.test(n))return"servings";
-  if(/(categoria|tipo|category)/.test(n))return"category";
   if(/(ingrediente|ingredients)/.test(n))return"ingredients";
   if(/(paso|preparacion|instruccion|steps|procedimiento)/.test(n))return"steps";
   return"skip";}
@@ -506,10 +503,9 @@ csvIn.addEventListener("change",()=>{
 function splitCell(s){s=String(s||"").trim();if(!s)return[];let parts=s.split(/\r?\n|\|/);if(parts.length===1&&s.includes(";"))parts=s.split(";");return parts.map(x=>x.replace(/^([-•*]|\d+[.)])\s*/,"").trim()).filter(Boolean);}
 A.csvRows=()=>{
   const items=csv.rows.map(row=>{
-    const r={id:newId(),name:"",time:0,servings:4,category:"",ingredients:[],steps:[],fav:false,createdAt:Date.now()};
+    const r={id:newId(),name:"",time:0,servings:4,ingredients:[],steps:[],fav:false,createdAt:Date.now()};
     csv.map.forEach((m,i)=>{const v=(row[i]||"").trim();
       if(m==="name")r.name=v;else if(m==="time")r.time=parseTimeInput(v);else if(m==="servings")r.servings=parseInt(v)||4;
-      else if(m==="category"){const c=CATS.find(x=>norm(x)===norm(v));r.category=c||"";}
       else if(m==="ingredients")r.ingredients=splitCell(v);else if(m==="steps")r.steps=splitCell(v);});
     return r;}).filter(r=>r.name);
   const names=new Set(S.recipes.filter(isMine).map(x=>norm(x.name)));
@@ -525,7 +521,7 @@ A.csvImport=async()=>{
   csv=null;reset("csvdone",{count:ok,skipped:skipped.length===1?skipped[0].r.name:skipped.length>1?skipped.length+" recetas":""});
 };
 A.template=async()=>{
-  const t='nombre,tiempo,porciones,categoria,ingredientes,pasos\n"Tarta de zapallitos",50 min,4,Rápidas,"1 tapa de tarta|3 zapallitos|1 cebolla|3 huevos|100 g de queso rallado","Rallá los zapallitos y salteálos con la cebolla 10 minutos.|Mezclá con los huevos y el queso.|Rellená la tapa y horneá 30 minutos."\n';
+  const t='nombre,tiempo,porciones,ingredientes,pasos\n"Tarta de zapallitos",50 min,4,"1 tapa de tarta|3 zapallitos|1 cebolla|3 huevos|100 g de queso rallado","Rallá los zapallitos y salteálos con la cebolla 10 minutos.|Mezclá con los huevos y el queso.|Rellená la tapa y horneá 30 minutos."\n';
   try{const u=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv"}));const a=document.createElement("a");a.href=u;a.download="plantilla-recetas.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);}
   catch(e){try{await navigator.clipboard.writeText(t);toast("Copiamos la plantilla");}catch(_){toast("No pudimos descargar la plantilla");}}
 };

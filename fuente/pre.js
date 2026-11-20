@@ -5,7 +5,6 @@ const ICONS=/*ICONS*/;
 const DRAW=/*DRAWINGS*/;
 const ILL_KEYS=["pasta","tarta","sopa"];
 const ALIAS={plato:"pasta",tomate:"sopa",limon:"tarta",huevo:"pasta",palta:"sopa",pan:"tarta"};
-const CATS=["Pastas","Dulces","Sopas","Rápidas"];
 const ic=(n,s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="${ICONS[n]||""}"/></svg>`;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
@@ -13,6 +12,10 @@ const newId=()=>"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7
 const clone=o=>JSON.parse(JSON.stringify(o));
 const fmtTime=m=>{m=+m||0;if(!m)return"";if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" h"+(r?" "+r:"");};
 function illKey(r){
+  const nm=norm(r&&r.name);
+  if(/\b(sopa|caldo|locro|guiso|crema de|puchero|estofado|cazuela)/.test(nm))return"sopa";
+  if(/\b(tarta|torta|pie|flan|tiramisu|postre|budin|bizcochuelo|alfajor|galletit|mousse|helado|brownie|cheesecake|pastel|dulce)/.test(nm))return"tarta";
+  if(/\b(fideo|pasta|ragu|noqui|tallarin|ravioli|lasagna|lasana|sorrentino|canelon|spaghetti|risotto|arroz)/.test(nm))return"pasta";
   if(r&&r.category==="Sopas")return"sopa";
   if(r&&r.category==="Dulces")return"tarta";
   if(r&&r.category==="Pastas")return"pasta";
