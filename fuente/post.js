@@ -325,7 +325,21 @@ function fitCount(force){
   num.style.fontSize=(w>max?Math.floor(150*max/w*0.97):150)+"px";
 }
 window.addEventListener("resize",()=>fitCount(true));
-function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);}
+// Safari paints the area above the page (status bar) with theme-color / the page background:
+// blue on screens that start with a blue cover, the page color everywhere else.
+let lastTint="";
+function tint(){
+  const c=cur(),bar=document.getElementById("cbar");
+  const blue=S.ready&&!S.fail&&(c.n==="welcome"||c.n==="timer"||c.n==="timerdone"||(c.n==="detail"&&!(bar&&bar.classList.contains("on"))));
+  const col=blue?"#3A5171":(getComputedStyle(document.body).backgroundColor||"#F7F6F3");
+  if(col===lastTint)return;lastTint=col;
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",col);
+  document.documentElement.style.backgroundColor=col;
+  // Safari 26 also samples fixed elements touching the top edge
+  let t=document.getElementById("topTint");if(!t){t=document.createElement("div");t.id="topTint";t.setAttribute("aria-hidden","true");document.body.appendChild(t);}
+  t.style.background=col;
+}
+function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
 function grow(el){el.style.height="auto";el.style.height=el.scrollHeight+"px";}
 function render(){
@@ -335,7 +349,7 @@ function render(){
   if(c.n==="home"&&c.searching&&document.activeElement&&document.activeElement.id==="q"){updateHomeList();return;}
   app.innerHTML=(V[c.n]||V.home)(c);
   app.querySelectorAll("textarea.bare").forEach(grow);
-  fitCount(true);onScrollBar();
+  fitCount(true);onScrollBar();tint();
   const key=c.n+(c.s||"");
   if(key!==lastKey){lastKey=key;const a=app.querySelector("[autofocus]");a&&a.focus();}
   if(sheet)renderSheet();
