@@ -137,7 +137,7 @@ V.detail=(p)=>{
   const r=getR(p.id);if(!r)return V.gone();
   const base=r.servings||1,sv=p.sv||base,f=sv/base;
   let h=`<div class="cbar" id="cbar">${nav(ibtn("back","caret-left","Volver"),`<span class="bm-m cbt">${esc(r.name)}</span>`,"")}</div><div class="screen" style="padding-top:0"><div class="hero" id="hero">${fullPhoto(r)?`<div class="ph">${pic(r)}</div>`:`<div class="art">${pic(r)}</div>`}
-  ${nav(ibtn("back","caret-left","Volver",""),"",`<div class="row">${ibtn("fav",isFav(r)?"heart-fill":"heart","Favorita","")}${ibtn("menu","dots-three","Más","")}</div>`)}</div>
+  ${nav(ibtn("back","caret-left","Volver",fullPhoto(r)?"":"dark"),"",`<div class="row">${ibtn("fav",isFav(r)?"heart-fill":"heart","Favorita",fullPhoto(r)?"":"dark")}${ibtn("menu","dots-three","Más",fullPhoto(r)?"":"dark")}</div>`)}</div>
   <div class="sheetc">
     <div class="titleRow"><div class="col g8"><h1 class="d-m">${esc(r.name)}</h1>${!isMine(r)&&r.ownerName?`<span class="lbl c2">De ${esc(r.ownerName)}</span>`:""}</div>${r.time?`<div class="tm"><span class="d-m ca">${esc(fmtTime(r.time))}</span><span class="lbl c2">Tiempo</span></div>`:""}</div>`;
   if(r.ingredients.length){
@@ -325,17 +325,10 @@ function fitCount(force){
   num.style.fontSize=(w>max?Math.floor(150*max/w*0.97):150)+"px";
 }
 window.addEventListener("resize",()=>fitCount(true));
-// Safari colors its status-bar area from the page background (and theme-color in older versions).
-// Screens that open with a blue cover get a blue page background; the rest keep the cream one.
-let lastTint="";
+// The page background (what Safari shows around the page) is always the app's gray.
 function tint(){
-  const c=cur();
-  const blue=S.ready&&!S.fail&&(c.n==="welcome"||c.n==="timer"||c.n==="timerdone");
-  const key=blue?"blue":"page";
-  if(key===lastTint)return;lastTint=key;
-  document.body.style.backgroundColor=blue?"#3A5171":"";
-  document.documentElement.style.backgroundColor=blue?"#3A5171":"";
-  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",blue?"#3A5171":getComputedStyle(document.body).backgroundColor);
+  const m=document.querySelector('meta[name="theme-color"]');
+  if(m){const c=getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==c)m.setAttribute("content",c);}
 }
 function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
