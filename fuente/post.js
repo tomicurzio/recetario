@@ -258,8 +258,16 @@ V.done=()=>{
 /* ----- cuenta ----- */
 const initial=()=>(myName()||(S.user&&S.user.email)||"?").trim().charAt(0).toUpperCase();
 const okEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim());
-V.welcome=()=>`<div class="screen"><div class="center" style="gap:40px"><div style="width:240px;height:180px">${ill("pasta")}</div><h1 class="d-m">Recetario</h1></div>
-  <div class="foot"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button></div></div>`;
+const WALL=[
+  {pad:30,items:[["Ñoquis de papa","1 h","pasta"],["Flan casero","50 min","tarta"],["Ragú blanco","3 h","pasta"],["Calabaza","40 min","sopa"],["Fideos","15 min","pasta"]]},
+  {pad:0,items:[["Fideos","15 min","pasta"],["Tarta de limón","45 min","tarta"],["Ragú de carne","2 h","pasta"],["Sopa de tomate","30 min","sopa"],["Flan casero","50 min","tarta"]]},
+  {pad:64,items:[["Sopa de tomate","30 min","sopa"],["Ñoquis","1 h","pasta"],["Flan","50 min","tarta"],["Ragú","2 h","pasta"],["Tarta","45 min","tarta"]]},
+  {pad:20,items:[["Ragú blanco","3 h","pasta"],["Sopa","30 min","sopa"],["Tarta de limón","45 min","tarta"],["Ñoquis","1 h","pasta"],["Flan","50 min","tarta"]]}
+];
+V.welcome=()=>`<div class="screen welcome">
+  <div class="wcover" aria-hidden="true"><div class="wall">${WALL.map(r=>`<div class="wrow" style="padding-left:${(r.pad/.82).toFixed(1)}px">${r.items.map(([n,t,k])=>`<div class="rc"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`).join("")}</div>`).join("")}</div><span class="ib wfav">${ic("heart-fill",20)}</span></div>
+  <div class="wsheet"><h1 class="d-m">Recetas en casa</h1><p class="bm c2">Para guardar las recetas que cocinamos de forma personalizada :)</p>
+  <div class="col g8" style="padding-top:16px"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button></div></div></div>`;
 V.email=(p)=>{
   const v=p.email!=null?p.email:(lsGet(LS_EMAIL)||"");
   return`<div class="screen">${nav(p.confirm?"":ibtn("back","caret-left","Volver"))}<div class="body">

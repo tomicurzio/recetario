@@ -158,6 +158,15 @@ textarea.bare{resize:none;display:block}
 
 .ib.avatar{color:var(--accent-ink)}
 .avatar.big{width:88px;height:88px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;letter-spacing:-.02em}
+/* ---------- welcome ---------- */
+.screen.welcome{padding-top:0}
+.wcover{flex:1;min-height:400px;background:var(--accent);position:relative;overflow:hidden}
+.wall{position:absolute;left:calc(50% - 180px - 129.7px);top:-72px;display:flex;flex-direction:column;gap:17.07px;transform:rotate(6deg) scale(.82);transform-origin:0 0;pointer-events:none}
+.wrow{display:flex;gap:17.07px}
+.wall .rc{width:150px;flex:none;box-shadow:none}
+.wall .rc .nm{-webkit-line-clamp:1}
+.wfav{position:absolute;left:calc(50% - 180px + 210px);top:149px;pointer-events:none}
+.wsheet{position:relative;margin-top:-28px;background:var(--bg);border-radius:28px 28px 0 0;display:flex;flex-direction:column;gap:12px;padding:32px var(--gxr) max(32px,calc(env(safe-area-inset-bottom) + 16px)) var(--gx)}
 /* ---------- detail ---------- */
 .hero{height:max(340px,calc(328px + env(safe-area-inset-top)));background:var(--accent);position:relative;display:flex;align-items:flex-end;justify-content:center;margin-top:calc(-1 * max(12px,env(safe-area-inset-top)));padding-top:max(12px,env(safe-area-inset-top));overflow:hidden}
 .hero .art{width:240px;height:180px;margin-bottom:56px}
