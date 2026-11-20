@@ -6,6 +6,7 @@ const DRAW=/*DRAWINGS*/;
 const ILL_KEYS=["pasta","tarta","sopa"];
 const ALIAS={plato:"pasta",tomate:"sopa",limon:"tarta",huevo:"pasta",palta:"sopa",pan:"tarta"};
 const ic=(n,s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="${ICONS[n]||""}"/></svg>`;
+const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||/[?&]demo\b/.test(location.search);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
 const newId=()=>"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
