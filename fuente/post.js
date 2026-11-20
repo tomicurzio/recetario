@@ -26,7 +26,7 @@ function toast(msg,actLabel,actFn,ms,top){
   const el=document.getElementById("toasts");
   toastAct=actFn||null;el.classList.toggle("top",!!top);
   const ok=!/^(No |Escrib|Ponele)/.test(msg);
-  el.innerHTML=`<div class="toast">${ok?`<img class="tck" src="img/check-azul.png" width="32" height="32" alt="" draggable="false">`:ic("warning-circle",22)}<span class="lbl">${esc(msg)}</span>${actLabel?`<button data-act="toastAct">${esc(actLabel)}</button>`:""}</div>`;
+  el.innerHTML=`<div class="toast">${ok?`<img class="tck" src="img/check-azul.png" width="32" height="32" alt="" draggable="false">`:ic("warning-circle",22)}<span class="lbl">${esc(msg)}</span>${actLabel?`<button data-act="toastAct">${esc(actLabel)}</button>`:""}<button class="tx" data-act="toastClose" aria-label="Cerrar">${ic("x",18)}</button></div>`;
   clearTimeout(toastT);toastT=setTimeout(()=>{const t=el.firstChild;if(top&&t){t.classList.add("out");toastT=setTimeout(()=>{el.innerHTML="";toastAct=null},220);}else{el.innerHTML="";toastAct=null}},ms||(actLabel?5000:2400));
 }
 
@@ -360,6 +360,7 @@ function keepScroll(fn){const y=scrollY;fn();render();scrollTo(0,y);}
 /* ================= actions ================= */
 const A={};
 A.back=back;A.home=()=>{closeSheet();reset();};
+A.toastClose=()=>{const el=document.getElementById("toasts"),t=el.firstChild;clearTimeout(toastT);toastAct=null;if(t&&el.classList.contains("top")){t.classList.add("out");toastT=setTimeout(()=>{el.innerHTML=""},220);}else el.innerHTML="";};
 A.toastAct=()=>{const f=toastAct;document.getElementById("toasts").innerHTML="";toastAct=null;f&&f();};
 A.closeSheet=closeSheet;
 A.openAdd=()=>openSheet({t:"add"});
