@@ -175,7 +175,8 @@ function fIngs(d){
   <button class="addrow bm-m" data-act="addIng">Agregar ingrediente</button>`;
 }
 function fSteps(d){
-  return`<div class="col g8">${d.steps.map((s,i)=>`<div class="scard"><span class="bm-m n" style="padding-top:1px">${two(i+1)}</span><textarea class="bare bm" rows="1" data-bind="st.${i}" placeholder="${i===0?"Ej: Rehogá la cebolla en aceite de oliva.":"¿Qué sigue?"}">${esc(s)}</textarea></div>`).join("")}</div>
+  const n=d.steps.length;
+  return`<div class="col g8">${d.steps.map((s,i)=>`<div class="scard ed"><div class="sord"><span class="bm-m n">${two(i+1)}</span>${n>1?`<button class="sb" data-act="stMove" data-i="${i}" data-d="-1" aria-label="Subir paso" ${i===0?"disabled":""}>${ic("caret-up",16)}</button><button class="sb" data-act="stMove" data-i="${i}" data-d="1" aria-label="Bajar paso" ${i===n-1?"disabled":""}>${ic("caret-down",16)}</button>`:""}</div><textarea class="bare bm" rows="1" data-bind="st.${i}" placeholder="${i===0?"Ej: Rehogá la cebolla en aceite de oliva.":"¿Qué sigue?"}">${esc(s)}</textarea><button class="x" data-act="rmStep" data-i="${i}" aria-label="Borrar paso">${ic("x",16)}</button></div>`).join("")}</div>
   <button class="addrow bm-m" data-act="addStep">Agregar paso</button>`;
 }
 V.manual=(p)=>{
@@ -508,6 +509,8 @@ A.cancelDraft=()=>{draft=null;reset();};
 A.dsv=(el)=>{draft.servings=Math.max(1,Math.min(99,(+draft.servings||1)+ +el.dataset.d));const s=el.parentNode.querySelector("[data-sv]");s&&(s.textContent=draft.servings);};
 A.addIng=()=>{draft.ings.push({q:"",n:""});keepScroll(()=>{});const q=app.querySelectorAll('[data-bind^="iq."]');q[q.length-1]&&q[q.length-1].focus();};
 A.rmIng=(el)=>{draft.ings.splice(+el.dataset.i,1);if(!draft.ings.length)draft.ings.push({q:"",n:""});keepScroll(()=>{});};
+A.stMove=(el)=>{const i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=draft.steps.length)return;const a=draft.steps;[a[i],a[j]]=[a[j],a[i]];keepScroll(()=>{});};
+A.rmStep=(el)=>{const i=+el.dataset.i,old=draft.steps[i];draft.steps.splice(i,1);if(!draft.steps.length)draft.steps.push("");keepScroll(()=>{});if(String(old||"").trim())toast("Paso borrado","Deshacer",()=>{if(!draft)return;draft.steps.splice(i,0,old);if(draft.steps.length>1&&!String(draft.steps[draft.steps.length-1]).trim()&&draft.steps.length-1!==i)draft.steps.pop();keepScroll(()=>{});});};
 A.addStep=()=>{draft.steps.push("");keepScroll(()=>{});const q=app.querySelectorAll('[data-bind^="st."]');q[q.length-1]&&q[q.length-1].focus();};
 A.wnext=()=>{const c=cur();if(c.s===1&&!draft.name.trim()){const i=document.getElementById("f-name");i&&i.focus();toast("Ponele un nombre a la receta");return;}c.s++;scrollTo(0,0);render();};
 A.wprev=()=>{cur().s--;scrollTo(0,0);render();};
