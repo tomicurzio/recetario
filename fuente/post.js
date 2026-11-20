@@ -326,6 +326,7 @@ function tint(){
   const dim=root.classList.contains("dimmed");
   // read the theme tokens, not the live background (it may be mid-transition)
   const col=blue?(dim?"#354A66":"#3A5171"):toHex(css.getPropertyValue(dim?"--bg-dimmed":"--bg").trim());
+  root.style.setProperty("--sb",col);
   const m=document.querySelector('meta[name="theme-color"]');
   if(m&&m.getAttribute("content")!==col)m.setAttribute("content",col);
 }
