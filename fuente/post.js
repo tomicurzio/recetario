@@ -33,8 +33,8 @@ function toast(msg,actLabel,actFn,ms){
 let sheet=null;
 // The dim also tints the page background, so the strip behind Safari's floating bottom bar
 // turns gray with the rest of the screen instead of staying light.
-function openSheet(s){sheet=s;renderSheet();requestAnimationFrame(()=>{if(!sheet)return;document.getElementById("layer").classList.add("open");document.documentElement.classList.add("dimmed");});}
-function closeSheet(){sheet=null;document.getElementById("layer").classList.remove("open");document.documentElement.classList.remove("dimmed");}
+function openSheet(s){sheet=s;renderSheet();requestAnimationFrame(()=>{if(!sheet)return;document.getElementById("layer").classList.add("open");document.documentElement.classList.add("dimmed");tint();});}
+function closeSheet(){sheet=null;document.getElementById("layer").classList.remove("open");document.documentElement.classList.remove("dimmed");tint();setTimeout(tint,260);}
 const optRow=(icon,title,act,danger)=>`<button class="opt ${danger?"danger":""}" data-act="${act}"><span class="oi">${ic(icon,22)}</span><span class="ot bl-m">${esc(title)}</span><span class="ch">${ic("caret-right",18)}</span></button>`;
 function renderSheet(){
   if(!sheet)return;
@@ -310,12 +310,20 @@ V.offline=()=>`<div class="screen"><div class="center"><h2 class="t-m">No pudimo
 const app=document.getElementById("app");
 let lastKey="";
 let fitKey="";
-// The page background (what Safari shows around the page) stays the app's gray.
+// In the home-screen app, iPhone paints the status bar with theme-color: blue while a blue
+// cover is at the top (recipe before scrolling, welcome), the app's gray everywhere else.
+// iPhone only accepts theme-color as hex (#F7F6F3), not rgb()
+function toHex(c){c=String(c).trim();if(/^#[0-9a-f]{6}$/i.test(c))return c.toUpperCase();const m=String(c).match(/\d+(\.\d+)?/g);if(!m||m.length<3)return "#F7F6F3";return "#"+m.slice(0,3).map(x=>Math.round(+x).toString(16).padStart(2,"0")).join("").toUpperCase();}
 function tint(){
+  const c=cur(),bar=document.getElementById("cbar"),root=document.documentElement,css=getComputedStyle(root);
+  const blue=S.ready&&!S.fail&&(c.n==="welcome"||(c.n==="detail"&&!(bar&&bar.classList.contains("on"))));
+  const dim=root.classList.contains("dimmed");
+  // read the theme tokens, not the live background (it may be mid-transition)
+  const col=blue?(dim?"#354A66":"#3A5171"):toHex(css.getPropertyValue(dim?"--bg-dimmed":"--bg").trim());
   const m=document.querySelector('meta[name="theme-color"]');
-  if(m){const c=getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==c)m.setAttribute("content",c);}
+  if(m&&m.getAttribute("content")!==col)m.setAttribute("content",col);
 }
-function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
+function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>Math.max(h.offsetHeight,300)-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
 function grow(el){el.style.height="auto";el.style.height=el.scrollHeight+"px";}
 function render(){
