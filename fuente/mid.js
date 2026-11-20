@@ -1,7 +1,7 @@
 /* ================= store (Firebase) ================= */
 const FB_CFG={
   apiKey:"AIzaSyCRLIOHduLfwUhmIrmlLvmXlmxlsubctrU",
-  authDomain:/\.(web\.app|firebaseapp\.com)$/.test(location.hostname)?location.hostname:"recetario-a8d06.firebaseapp.com",
+  authDomain:"recetario-a8d06.firebaseapp.com",
   projectId:"recetario-a8d06",
   storageBucket:"recetario-a8d06.firebasestorage.app",
   messagingSenderId:"979672181967",
