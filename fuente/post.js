@@ -57,11 +57,11 @@ function renderSheet(){
   }else if(t==="atajo"){
     const i=sheet.i||0,S_=ATAJO_STEPS,st=S_[i],last=i===S_.length-1;
     h+=`<div class="tut"><div class="tdots" aria-hidden="true">${S_.map((_,k)=>`<i class="${k<=i?"on":""}"></i>`).join("")}</div>
-      <span class="lbl c2">${!i?"Timers en el Reloj":last?"Prueba":`Paso ${i} de ${S_.length-2}`}</span>
+      <span class="lbl c2">${last?"Prueba":`Paso ${i+1} de ${S_.length-1}`}</span>
       <h2 class="t-m">${st.t}</h2><p class="bm c2">${st.d}</p>${st.mock||""}${st.note?`<p class="cap c2">${st.note}</p>`:""}</div>
       <div class="col g8">${st.open?`<a class="btn sec wide" href="shortcuts://">Abrir Atajos</a>`:""}
       ${last?`<button class="btn pri wide" data-act="atajoProbar">Probar con 1 minuto</button><button class="btn sec wide" data-act="atajoListo" data-m="${sheet.m||""}">${sheet.m?`Funciona, poner ${sheet.m} min`:"Funciona"}</button>`
-        :`<button class="btn pri wide" data-act="atajoPaso" data-d="1">${i?"Siguiente":"Empezar"}</button>`}
+        :`<button class="btn pri wide" data-act="atajoPaso" data-d="1">Siguiente</button>`}
       ${i?`<button class="btn txt wide" data-act="atajoPaso" data-d="-1">Atrás</button>`:`<button class="btn txt wide" data-act="closeSheet">Ahora no</button>`}</div>`;
   }else if(t==="steps"){
     const r=getR(cook.id);
@@ -404,7 +404,6 @@ function restoreCook(){
 window.addEventListener("hashchange",()=>{if(/#volver/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);});
 const tok=x=>`<span class="tok">${x}</span>`;
 const ATAJO_STEPS=[
-  {t:"Que suene aunque cierres Safari",d:"Los timers de las recetas se ponen en el Reloj del iPhone. Para eso armamos un atajo, una sola vez. Son 5 pasos cortos."},
   {t:"Creá un atajo nuevo",d:"Abrí la app Atajos y tocá + arriba a la derecha.",open:true},
   {t:"Agregá «Obtener números»",d:"Buscá la acción «Obtener números de la entrada» y tocala. Tiene que quedar así:",mock:`<div class="sc">Obtener números de ${tok("Entrada del atajo")}</div>`,note:"Si no dice «Entrada del atajo», tocá el campo azul y elegila."},
   {t:"Agregá el temporizador",d:"Abajo, agregá «Iniciar temporizador». Tocá el tiempo, elegí la variable Números y dejá minutos:",mock:`<div class="sc">Iniciar temporizador por ${tok("Números")} minutos</div>`},
