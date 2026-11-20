@@ -327,10 +327,13 @@ function fitCount(force){
   num.style.fontSize=(w>max?Math.floor(150*max/w*0.97):150)+"px";
 }
 window.addEventListener("resize",()=>fitCount(true));
-// The page background (what Safari shows around the page) is always the app's gray.
+// The page background is what Safari shows around the page (above, and behind its floating
+// bottom bar). It matches the screen: blue on the full-blue timer screens, the app's gray elsewhere.
 function tint(){
+  const c=cur(),blue=S.ready&&!S.fail&&(c.n==="timer"||c.n==="timerdone");
+  document.documentElement.classList.toggle("blue-page",blue);
   const m=document.querySelector('meta[name="theme-color"]');
-  if(m){const c=getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==c)m.setAttribute("content",c);}
+  if(m){const col=blue?"#3A5171":getComputedStyle(document.body).backgroundColor;if(m.getAttribute("content")!==col)m.setAttribute("content",col);}
 }
 function onScrollBar(){const b=document.getElementById("cbar"),h=document.getElementById("hero");if(!b||!h)return;b.classList.toggle("on",scrollY>h.offsetHeight-80);tint();}
 window.addEventListener("scroll",onScrollBar,{passive:true});
