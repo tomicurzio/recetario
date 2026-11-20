@@ -57,14 +57,20 @@ img{display:block}
 h1,h2,h3,p{margin:0}
 
 /* ---------- desktop gate ---------- */
-#desk{display:none;min-height:100vh;align-items:center;justify-content:center;padding:40px;text-align:center}
-#desk .in{max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
-#desk .ill{width:240px;height:180px}
+#desk{display:none;min-height:100vh;grid-template-columns:1fr 1fr}
+#desk .dleft{position:relative;background:var(--accent);overflow:hidden;min-height:100vh}
+#desk .dwall{position:absolute;left:-99px;top:-164px;display:flex;flex-direction:column;gap:20.86px;transform:rotate(6deg) scale(1.353);transform-origin:0 0;pointer-events:none}
+#desk .wrow{display:flex;gap:20.86px}
+#desk .rc{width:150px;flex:none;box-shadow:none}
+#desk .rc .nm{-webkit-line-clamp:1}
+#desk .dright{display:flex;flex-direction:column;justify-content:center;gap:24px;padding:48px clamp(48px,7vw,120px)}
+#desk .dtitle{font-size:56px;line-height:1.04;letter-spacing:-.03em;font-weight:500}
+#desk .bl{font-size:17px;line-height:1.4}
+#desk .qrc{display:flex;align-items:center;gap:20px;padding:20px 28px 20px 20px;border-radius:28px;background:var(--card);box-shadow:0 6px 18px rgba(38,33,20,.08);align-self:flex-start;color:var(--ink)}
 @media (min-width:820px) and (hover:hover) and (pointer:fine){
   #app,#layer,#toasts{display:none!important}
-  #desk{display:flex}
+  #desk{display:grid}
 }
-
 /* ---------- layout ---------- */
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
 .screen{min-height:100dvh;display:flex;flex-direction:column;padding-top:max(12px,env(safe-area-inset-top))}
@@ -300,11 +306,9 @@ html.dimmed,html.dimmed body{background-color:var(--bg-dimmed)!important}
 .photoTile .chg{position:absolute;right:12px;bottom:12px}
 </style>
 
-<div id="desk"><div class="in">
-  <div class="ill" id="deskArt"></div>
-  <h1 class="d-m">Recetario es para el celular</h1>
-  <p class="bm c2">Abrí este link desde tu teléfono para usarlo. En la computadora no está disponible.</p>
-</div></div>
+<div id="desk"><div class="dleft" aria-hidden="true"><div class="dwall" id="deskWall"></div></div>
+<div class="dright"><div class="col" style="gap:12px"><h1 class="dtitle">Funciona solo<br>en el celular</h1><p class="bl c2">Abrila en el teléfono con el código QR.</p></div>
+<div class="qrc"><svg width="132" height="132" viewBox="0 0 29 29" role="img" aria-label="Código QR para abrir Recetario"><path d="M0 0h7v1h-7zM8 0h1v1h-1zM11 0h1v1h-1zM14 0h5v1h-5zM20 0h1v1h-1zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM13 1h1v1h-1zM15 1h1v1h-1zM17 1h2v1h-2zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM14 2h2v1h-2zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM11 3h1v1h-1zM14 3h2v1h-2zM17 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM13 4h1v1h-1zM15 4h1v1h-1zM17 4h4v1h-4zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h2v1h-2zM12 5h1v1h-1zM15 5h3v1h-3zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1h-2zM12 7h5v1h-5zM18 7h1v1h-1zM20 7h1v1h-1zM1 8h1v1h-1zM6 8h4v1h-4zM11 8h1v1h-1zM15 8h1v1h-1zM17 8h1v1h-1zM21 8h1v1h-1zM27 8h2v1h-2zM3 9h1v1h-1zM5 9h1v1h-1zM8 9h4v1h-4zM13 9h1v1h-1zM16 9h1v1h-1zM18 9h2v1h-2zM21 9h1v1h-1zM24 9h2v1h-2zM27 9h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM6 10h2v1h-2zM9 10h2v1h-2zM12 10h1v1h-1zM14 10h2v1h-2zM20 10h3v1h-3zM24 10h2v1h-2zM1 11h1v1h-1zM3 11h1v1h-1zM5 11h1v1h-1zM7 11h2v1h-2zM11 11h4v1h-4zM16 11h1v1h-1zM20 11h1v1h-1zM22 11h1v1h-1zM24 11h2v1h-2zM1 12h1v1h-1zM4 12h1v1h-1zM6 12h7v1h-7zM14 12h1v1h-1zM16 12h1v1h-1zM19 12h4v1h-4zM25 12h1v1h-1zM27 12h1v1h-1zM0 13h6v1h-6zM8 13h5v1h-5zM19 13h2v1h-2zM22 13h1v1h-1zM24 13h2v1h-2zM28 13h1v1h-1zM1 14h1v1h-1zM3 14h2v1h-2zM6 14h2v1h-2zM9 14h1v1h-1zM11 14h1v1h-1zM13 14h1v1h-1zM18 14h1v1h-1zM23 14h1v1h-1zM27 14h1v1h-1zM3 15h2v1h-2zM8 15h1v1h-1zM11 15h3v1h-3zM16 15h1v1h-1zM19 15h2v1h-2zM24 15h4v1h-4zM1 16h2v1h-2zM5 16h3v1h-3zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h1v1h-1zM17 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h2v1h-2zM28 16h1v1h-1zM0 17h1v1h-1zM7 17h8v1h-8zM19 17h2v1h-2zM22 17h1v1h-1zM24 17h1v1h-1zM28 17h1v1h-1zM0 18h4v1h-4zM5 18h5v1h-5zM12 18h6v1h-6zM19 18h1v1h-1zM23 18h2v1h-2zM26 18h1v1h-1zM28 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM5 19h1v1h-1zM8 19h3v1h-3zM12 19h2v1h-2zM18 19h7v1h-7zM27 19h2v1h-2zM0 20h1v1h-1zM3 20h2v1h-2zM6 20h1v1h-1zM8 20h6v1h-6zM15 20h1v1h-1zM17 20h1v1h-1zM20 20h7v1h-7zM28 20h1v1h-1zM8 21h3v1h-3zM15 21h1v1h-1zM18 21h3v1h-3zM24 21h3v1h-3zM0 22h7v1h-7zM8 22h4v1h-4zM13 22h3v1h-3zM18 22h3v1h-3zM22 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM12 23h1v1h-1zM14 23h2v1h-2zM18 23h3v1h-3zM24 23h2v1h-2zM27 23h1v1h-1zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM10 24h2v1h-2zM13 24h1v1h-1zM15 24h2v1h-2zM19 24h6v1h-6zM27 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM10 25h1v1h-1zM12 25h3v1h-3zM19 25h2v1h-2zM23 25h1v1h-1zM26 25h2v1h-2zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM14 26h2v1h-2zM18 26h7v1h-7zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h3v1h-3zM12 27h1v1h-1zM16 27h1v1h-1zM19 27h1v1h-1zM21 27h1v1h-1zM24 27h3v1h-3zM28 27h1v1h-1zM0 28h7v1h-7zM9 28h1v1h-1zM11 28h1v1h-1zM15 28h3v1h-3zM19 28h1v1h-1zM21 28h2v1h-2zM24 28h1v1h-1zM26 28h1v1h-1z" fill="currentColor"/></svg><div class="col g4"><span class="bm-m">Escaneá con la cámara</span><span class="cap c2">o abrí recetario-a8d06.web.app<br>desde el teléfono</span></div></div></div></div>
 <div id="app"></div>
 <div id="layer"><div class="dim" data-act="closeSheet"></div><div class="sheet" id="sheet"></div></div>
 <div id="toasts"></div>
