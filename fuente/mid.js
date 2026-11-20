@@ -12,7 +12,9 @@ function demoSave(){try{localStorage.setItem("recetario.demo",JSON.stringify({re
 const FBU="https://www.gstatic.com/firebasejs/11.10.0/";
 const S={recipes:[],state:{},favs:new Set(),user:null,profile:null,ready:false,slow:false,fail:false};
 let F=null,unsubs=[];
-const LS_EMAIL="recetario.email";
+const LS_EMAIL="recetario.email",LS_GUEST="recetario.guest";
+let SHARED=new URLSearchParams(location.search).get("r");
+function openShared(){if(!SHARED)return;const id=SHARED;SHARED=null;history.replaceState(null,"",location.pathname+(DEMO?location.search.replace(/[?&]r=[^&]*/,""):""));if(getR(id))stack.push({n:"detail",id});}
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const uid=()=>S.user&&S.user.uid;
@@ -47,6 +49,7 @@ async function delRecipe(id){
 }
 async function saveUser(patch){
   if(DEMO){demoSave();return}
+  if(!uid())return;
   try{await serial("_user",()=>F.fs.setDoc(userRef(),patch,{merge:true}))}catch(e){onWriteErr(e)}
 }
 async function setState(patch){
@@ -63,8 +66,10 @@ async function toggleFav(id){
 async function initStore(){
   if(DEMO){
     let d={};try{d=JSON.parse(localStorage.getItem("recetario.demo")||"{}")}catch(e){}
+    S.recipes=d.recipes||[];
+    if(/[?&]guest\b/.test(location.search)){S.guest=true;S.ready=true;stack=[{n:"home",tab:"explorar"}];openShared();render();return;}
     S.user={uid:"demo",email:"vos@email.com",displayName:"Tomás"};S.profile=d.profile||{name:"Tomás"};
-    S.recipes=d.recipes||[];S.state=d.state||{};S.favs=new Set(d.favs||[]);S.ready=true;stack=[{n:"home"}];restoreCook();render();return;
+    S.state=d.state||{};S.favs=new Set(d.favs||[]);S.ready=true;stack=[{n:"home"}];openShared();restoreCook();render();return;
   }
   try{
     const [app,au,fs]=await Promise.all([import(FBU+"firebase-app.js"),import(FBU+"firebase-auth.js"),import(FBU+"firebase-firestore.js")]);
@@ -98,12 +103,14 @@ function authErr(e){
 }
 function onUser(u){
   unsubs.forEach(f=>f());unsubs=[];
-  S.user=u;S.recipes=[];S.profile=null;S.favs=new Set();S.state={};S.slow=false;
+  S.user=u;S.recipes=[];S.profile=null;S.favs=new Set();S.state={};S.slow=false;S.guest=false;
+  if(u)lsSet(LS_GUEST,null);
+  if(!u&&!S.linkPending&&(lsGet(LS_GUEST)||SHARED)){startGuest();return;}
   if(!u){S.ready=true;stack=[{n:S.linkPending?"email":"welcome"}];if(S.linkPending)stack[0].confirm=true;scrollTo(0,0);render();return;}
   S.ready=false;render();
   let gotUser=false,gotRecs=false;
   const done=()=>{if(!(gotUser&&gotRecs)||S.ready)return;S.ready=true;
-    stack=[{n:"home"}];if(!S.profile.name)stack=[{n:"name"}];else restoreCook();scrollTo(0,0);render();};
+    stack=[{n:"home"}];if(!S.profile.name)stack=[{n:"name"}];else{openShared();restoreCook();}scrollTo(0,0);render();};
   const timer=setTimeout(()=>{if(!S.ready){S.slow=true;gotUser=gotRecs=true;S.profile=S.profile||{};done();}},10000);
   unsubs.push(F.fs.onSnapshot(userRef(),snap=>{
     S.profile=snap.exists()?snap.data():{};
@@ -116,6 +123,19 @@ function onUser(u){
     if(!snap.metadata.fromCache){S.slow=false;clearTimeout(timer);}
     gotRecs=true;done();if(S.ready)render();
   },()=>{clearTimeout(timer);S.slow=true;gotRecs=true;done();render();}));
+}
+
+// Without an account: recipes are public to read, so a guest can browse Explorar, open a
+// shared link and cook. Favorites, uploading and the profile ask to create an account.
+function startGuest(){
+  unsubs.forEach(f=>f());unsubs=[];
+  S.guest=true;S.ready=false;render();
+  const q=F.fs.query(F.fs.collection(F.db,"recipes"),F.fs.orderBy("createdAt","desc"));
+  unsubs.push(F.fs.onSnapshot(q,snap=>{
+    S.recipes=snap.docs.map(d=>Object.assign({},d.data(),{id:d.id}));
+    if(!S.ready){S.ready=true;stack=[{n:"home",tab:"explorar"}];openShared();scrollTo(0,0);}
+    render();
+  },()=>{S.slow=true;if(!S.ready){S.ready=true;stack=[{n:"home",tab:"explorar"}];}render();}));
 }
 
 /* ================= router ================= */

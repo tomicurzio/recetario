@@ -46,6 +46,8 @@ function renderSheet(){
   }else if(t==="menu"){
     const r=getR(sheet.id);
     h+=`<h2 class="t-m" style="padding:4px 8px 0">${esc(r?r.name:"")}</h2><div class="col" style="padding:0 8px">${isMine(r)?optRow("pencil-simple","Editar receta","edit"):""}${optRow("link","Compartir","share")}${isMine(r)?optRow("trash","Borrar receta","askDelete",true):""}</div>`;
+  }else if(t==="join"){
+    h+=`<div class="col g8" style="padding:4px 8px 8px"><h2 class="t-m">${esc(sheet.title||"Creá tu cuenta")}</h2><p class="bm c2">Con una cuenta guardás tus favoritas, subís tus recetas y seguís cocinando donde quedaste.</p></div><div class="col g8"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button><button class="btn txt wide" data-act="closeSheet">Ahora no</button></div>`;
   }else if(t==="photo"){
     h+=`<h2 class="t-m" style="padding:4px 8px 0">Foto</h2><div class="col" style="padding:0 8px">${optRow("camera","Cambiar foto","pickPhoto")}${optRow("trash","Quitar foto","rmPhoto",true)}</div>`;
   }else if(t==="delete"){
@@ -117,7 +119,7 @@ V.home=(p)=>{
   const own=S.recipes.filter(isMine);
   const mine=S.recipes.filter(r=>isMine(r)||isFav(r)).sort((a,b)=>(isFav(b)-isFav(a))||byNew(a,b));
   const others=S.recipes.filter(r=>!isMine(r)).sort(byNew);
-  const tab=p.tab||(mine.length?"mis":"explorar");p.tab=tab;
+  const tab=S.user?(p.tab||(mine.length?"mis":"explorar")):"explorar";p.tab=tab;
   let list=tab==="mis"?mine:others;
   if(q){const nq=norm(q);list=list.filter(r=>norm(r.name).includes(nq)||(r.ingredients||[]).some(i=>norm(i).includes(nq)));}
   const prog=S.state.progress&&getR(S.state.progress.id)?S.state.progress:null;
@@ -125,7 +127,7 @@ V.home=(p)=>{
   const base=tab==="mis"?mine:others;
   let h=`<div class="screen">`;
   h+=searching?`<div class="nav" style="padding-left:var(--gx)"><label class="search">${ic("magnifying-glass",20)}<input id="q" data-bind="q" class="bm" placeholder="Buscar en ${title.toLowerCase()}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></label><button class="btn txt sm" data-act="endSearch">Cancelar</button></div>`
-    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">${title}</h1><div class="row">${base.length?ibtn("search","magnifying-glass","Buscar"):""}<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button></div></div>`;
+    :`<div class="nav" style="padding-left:var(--gx);padding-right:var(--gxr)"><h1 class="d-m">${title}</h1><div class="row">${base.length?ibtn("search","magnifying-glass","Buscar"):""}${S.user?`<button class="ib avatar" data-act="profile" aria-label="Perfil"><span class="bl-m">${esc(initial())}</span></button>`:`<button class="btn pri sm" data-act="join" style="padding:0 18px;flex:none">Entrar</button>`}</div></div>`;
   h+=`<div class="body" style="gap:16px;padding-bottom:120px">`;
   if(S.slow)h+=`<div class="notice danger">${ic("warning-circle",18)}<span>No pudimos conectarnos todavía. Seguimos intentando.</span></div>`;
   if(tab==="mis"&&prog&&!searching){const r=getR(prog.id),tot=(r.steps||[]).length||1,st=Math.min(prog.step+1,tot);
@@ -135,7 +137,7 @@ V.home=(p)=>{
     <div class="col g4" style="padding-top:4px"><button class="btn pri wide" data-act="addManual">Escribir una receta</button><button class="btn txt wide" data-act="addCsv">Importar desde un CSV</button></div>`;
   }else if(q&&!list.length)h+=`<div class="col g8" style="padding-top:40px;text-align:center"><h2 class="t-m">No encontramos nada</h2><p class="bm c2">Probá con otra palabra.</p></div>`;
   else{
-    const showAdd=tab==="explorar"&&!own.length&&!q;
+    const showAdd=S.user&&tab==="explorar"&&!own.length&&!q;
     h+=`<div class="grid">${showAdd?addCard:""}${list.map(r=>cardHtml(r,tab==="explorar")).join("")}</div>`;
     if(tab==="explorar"&&!others.length&&!q)h+=`<p class="bm c2" style="text-align:center;padding-top:8px">Todavía nadie más subió recetas.</p>`;
   }
@@ -282,7 +284,7 @@ const WALL=[
 V.welcome=()=>`<div class="screen welcome">
   <div class="wcover" aria-hidden="true"><div class="wall">${WALL.map(r=>`<div class="wrow" style="padding-left:${(r.pad/.82).toFixed(1)}px">${r.items.map(([n,t,k])=>`<div class="rc"><div class="tile">${ill(k)}</div><div class="tx"><span class="bm-m nm">${n}</span><span class="cap c2">${t}</span></div></div>`).join("")}</div>`).join("")}</div><span class="ib wfav">${ic("heart-fill",20)}</span></div>
   <div class="wsheet"><h1 class="d-m">Recetas en casa</h1><p class="bm c2">Para guardar las recetas que cocinamos de forma personalizada :)</p>
-  <div class="col g8" style="padding-top:16px"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button></div></div></div>`;
+  <div class="col g8" style="padding-top:16px"><button class="btn pri wide" data-act="google">Seguir con Google</button><button class="btn sec wide" data-act="toEmail">Entrar con email</button><button class="btn txt wide" data-act="guest">Ver recetas sin cuenta</button></div></div></div>`;
 V.email=(p)=>{
   const v=p.email!=null?p.email:(lsGet(LS_EMAIL)||"");
   return`<div class="screen">${nav(p.confirm?"":ibtn("back","caret-left","Volver"))}<div class="body">
@@ -363,7 +365,10 @@ A.back=back;A.home=()=>{closeSheet();reset();};
 A.toastClose=()=>{const el=document.getElementById("toasts"),t=el.firstChild;clearTimeout(toastT);toastAct=null;if(t&&el.classList.contains("top")){t.classList.add("out");toastT=setTimeout(()=>{el.innerHTML=""},220);}else el.innerHTML="";};
 A.toastAct=()=>{const f=toastAct;document.getElementById("toasts").innerHTML="";toastAct=null;f&&f();};
 A.closeSheet=closeSheet;
-A.openAdd=()=>openSheet({t:"add"});
+const needAcct=title=>{if(S.user)return false;openSheet({t:"join",title});return true;};
+A.join=()=>openSheet({t:"join"});
+A.guest=()=>{lsSet(LS_GUEST,"1");if(DEMO){S.user=null;S.favs=new Set();S.state={};S.guest=true;stack=[{n:"home",tab:"explorar"}];render();return}startGuest();};
+A.openAdd=()=>{if(needAcct("Creá una cuenta para subir recetas"))return;openSheet({t:"add"});};
 A.dismissResume=()=>{const p=S.state.progress;if(!p)return;keepScroll(()=>{setState({progress:null});});toast("Listo, lo sacamos","Deshacer",()=>setState({progress:p}).then(()=>render()));};
 // Clock timer via the "Timer de Recetario" shortcut. Once it is in the Clock, the app's own
 // timer for that step stops (the app can't pause or extend a Clock timer, so there is one timer,
@@ -407,20 +412,21 @@ function runClock(m){
 A.clockTimer=(el)=>{const m=+el.dataset.m||1;if(lsGet(LS_ATAJO))runClock(m);else openSheet({t:"atajo",m,i:0});};
 A.atajoListo=(el)=>{lsSet(LS_ATAJO,"1");closeSheet();const m=+el.dataset.m;if(m)runClock(m);else toast("Listo, los timers van al Reloj");};
 A.atajoSetup=()=>openSheet({t:"atajo",i:0});
-A.tab=(el)=>{const c=cur();if(c.tab===el.dataset.t)return;c.tabDir=el.dataset.t==="explorar"?1:-1;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
+A.tab=(el)=>{if(el.dataset.t==="mis"&&needAcct("Creá una cuenta para tener tus recetas"))return;const c=cur();if(c.tab===el.dataset.t)return;c.tabDir=el.dataset.t==="explorar"?1:-1;c.tab=el.dataset.t;c.q="";scrollTo(0,0);render();};
 A.search=()=>{cur().searching=true;cur().q="";render();setTimeout(()=>{const q=document.getElementById("q");q&&q.focus()},30);};
 A.endSearch=()=>{cur().searching=false;cur().q="";render();};
 A.open=(el)=>{closeSheet();go("detail",{id:el.dataset.id});};
 A.sv=(el)=>{const c=cur();const r=getR(c.id);c.sv=Math.max(1,Math.min(99,(c.sv||r.servings)+ +el.dataset.d));keepScroll(()=>{});};
-A.fav=async()=>{const on=await toggleFav(cur().id);toast(on?"Guardada en favoritas":"Sacada de favoritas",0,0,0,true);};
+A.fav=async()=>{if(needAcct("Creá una cuenta para guardar favoritas"))return;const on=await toggleFav(cur().id);toast(on?"Guardada en favoritas":"Sacada de favoritas",0,0,0,true);};
 A.menu=()=>openSheet({t:"menu",id:cur().id});
 A.edit=()=>{closeSheet();if(!isMine(getR(cur().id)))return;draft=toDraft(getR(cur().id));go("edit");};
 A.saveEdit=async()=>{if(!draft.name.trim()){const i=document.getElementById("f-name");i&&i.focus();return;}const r=fromDraft(draft);if(await putRecipe(r)){draft=null;back();toast("Cambios guardados");}};
 A.share=async()=>{
-  closeSheet();const r=getR(cur().id);
-  const txt=`${r.name}\n${r.time?fmtTime(r.time)+" · ":""}${r.servings} porciones\n\nIngredientes\n${r.ingredients.map(i=>"• "+i).join("\n")}\n\nPasos\n${r.steps.map((s,i)=>(i+1)+". "+s).join("\n")}`;
-  let ok=false;try{await navigator.clipboard.writeText(txt);ok=true}catch(e){const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{ok=document.execCommand("copy")}catch(_){}ta.remove();}
-  toast(ok?"Receta copiada para compartir":"No pudimos copiarla");
+  closeSheet();const r=getR(cur().id);if(!r)return;
+  const url=location.origin+"/?r="+encodeURIComponent(r.id);
+  if(navigator.share){try{await navigator.share({title:r.name,text:r.name+" · Recetario",url});return}catch(e){if(e&&e.name==="AbortError")return;}}
+  let ok=false;try{await navigator.clipboard.writeText(url);ok=true}catch(e){const ta=document.createElement("textarea");ta.value=url;document.body.appendChild(ta);ta.select();try{ok=document.execCommand("copy")}catch(_){}ta.remove();}
+  toast(ok?"Copiamos el link de la receta":"No pudimos copiar el link");
 };
 A.askDelete=()=>openSheet({t:"delete",id:sheet.id});
 A.doDelete=async()=>{
@@ -432,8 +438,9 @@ A.doDelete=async()=>{
 
 /* cuenta */
 A.reload=()=>location.reload();
-A.toEmail=()=>go("email");
+A.toEmail=()=>{closeSheet();go("email");};
 A.google=async()=>{
+  closeSheet();if(DEMO){toast("En la demo no se puede entrar con Google");return}
   const p=new F.au.GoogleAuthProvider();
   try{await F.au.signInWithPopup(F.auth,p);}
   catch(e){if(/popup-blocked|operation-not-supported|web-storage/.test(e&&e.code||"")){try{await F.au.signInWithRedirect(F.auth,p)}catch(e2){authErr(e2)}}else authErr(e);}
@@ -469,7 +476,7 @@ A.saveName=async()=>{
   if(!name){i&&i.classList.add("err");i&&i.focus();toast("Escribí tu nombre");return;}
   await renameEverywhere(name);reset();
 };
-A.profile=()=>go("profile");
+A.profile=()=>{if(needAcct())return;go("profile");};
 async function savePname(){
   const c=cur();if(c.n!=="profile"||c.pname==null)return;
   const name=c.pname.trim();if(!name||name===myName())return;
@@ -668,7 +675,7 @@ A.askExit=()=>openSheet({t:"exit"});
 A.exitCook=async()=>{closeSheet();const id=cook.id;await setState({progress:{id,step:cook.step,sv:cook.sv,at:Date.now()}});cook=null;lockOff();reset("detail",{id});};
 A.finish=()=>{if(S.state.progress)setState({progress:null});replace("done");};
 async function saveDone(){}
-A.doneFav=async()=>{if(!cook)return;await toggleFav(cook.id);};
+A.doneFav=async()=>{if(needAcct("Creá una cuenta para guardar favoritas"))return;if(!cook)return;await toggleFav(cook.id);};
 A.doneBack=async()=>{const id=cook.id;await saveDone();cook=null;lockOff();reset("detail",{id});};
 A.doneHome=async()=>{await saveDone();cook=null;lockOff();reset();};
 
